@@ -1,0 +1,141 @@
+program	<- (line*) -> program
+			(!. / ({} {.*} {}) -> SYNTAX_ERROR)
+line	<- (block Sp (comment / %nl)) -> line
+
+statement	<- assign
+			 / goto
+			 / if
+			 / expression
+block		<- (statement)*
+
+goto		<- Sp (GOTO Sp need_expression)
+				-> goto
+
+if			<- Sp (if_body Sp else_body? Sp need_end) -> if
+if_body		<- (IF Sp need_expression Sp need_then block) -> if_body
+else_body	<- (ELSE Sp block) -> else_body
+
+assign		<- Sp (identifier Sp {assign_op} Sp need_expression)
+				-> assign
+
+expression		<- value_nop / prec_11 -> expression
+need_expression	<- (value_nop / prec_11 / {} -> MISS_EXPR) -> expression
+
+unary_pre	<- pre_post_op Sp (value / {} -> MISS_EXPR)
+unary_post	<- value Sp pre_post_op
+prec_1		<- unary_post / unary_pre / value
+
+neg			<- ({neg_op} Sp (value_nop / prec_1 / {} -> MISS_EXPR)) -> neg
+prec_2		<- neg / prec_1
+
+fact1		<- (value_nop / prec_2) Sp fac_op
+fact2		<- fact1 Sp fac_op
+prec_3		<- fact1 / fact2 / prec_2
+
+named		<- ({named_op} Sp (value_nop / prec_3 / {} -> MISS_EXPR)) -> keyword
+prec_4		<- named / prec_3
+
+exp			<- (((value_nop / prec_4) Sp {exp_op} Sp)+ (value_nop / prec_4 / {} -> MISS_EXPR)) -> exp
+prec_5		<- exp / prec_4
+
+mul			<- (((value_nop / prec_5) Sp {mul_op} Sp)+ (value_nop / prec_5 / {} -> MISS_EXPR)) -> mul
+prec_6		<- mul / prec_5
+
+add			<- (((value_nop / prec_6) Sp {add_op} Sp)+ (value_nop / prec_6 / {} -> MISS_EXPR)) -> add
+prec_7		<- add / prec_6
+
+neq			<- (((value_nop / prec_7) Sp {neq_op} Sp)+ (value_nop / prec_7 / {} -> MISS_EXPR)) -> neq
+prec_8		<- neq / prec_7
+
+eq			<- (((value_nop / prec_8) Sp {eq_op} Sp)+ (value_nop / prec_8 / {} -> MISS_EXPR)) -> eq
+prec_9		<- eq / prec_8
+
+or_expr		<- ((value_nop / prec_9) (Sp {OR} Sp (value_nop / prec_9 / {} -> MISS_EXPR))+) -> or
+prec_10		<- or_expr / prec_9
+
+and_expr	<- ((value_nop / prec_10) (Sp {AND} Sp (value_nop / prec_10 / {} -> MISS_EXPR))+) -> and
+prec_11		<- and_expr / prec_10
+
+value 	<- string
+		 / number
+		 / identifier
+		 / group
+value_nop	<- value Sp !any_op
+group	<- '(' Sp need_expression Sp (')' / {} -> MISS_CURLY)
+
+identifier				<- data_field_identifier / local_identifier
+local_identifier		<- RESERVED [a-zA-Z0-9_]+ / !RESERVED [a-zA-Z_][a-zA-Z0-9_]*
+data_field_identifier	<- ':' [a-zA-Z0-9_]+
+
+comment	<- ({} '//' {(!%nl .)*} {} %nl) -> comment
+
+any_op		<- assign_op / pre_post_op / add_op / neg_op / neg_op / mul_op / exp_op / fac_op / neq_op / eq_op / named_op / AND / OR
+assign_op	<- '=' / '+=' / '-=' / '*=' / '/=' / '%='
+named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN
+pre_post_op	<- '++' / '--'
+add_op		<- [+-]
+neg_op		<- '-'
+mul_op		<- [*/%]
+exp_op		<- '^'
+fac_op		<- '!'
+neq_op		<- [<>] '='?
+eq_op		<- [!=] '='
+
+string	<- '"' ([!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\^_`abcdefghijklmnopqrstuvwxyz{|}]/'['/']')*->string '"'
+number	<- ('-'? digit+ ('.' digit+)?) -> number
+
+digit	<- [0-9]
+
+need_end	<- END / {} -> MISS_END
+need_then	<- THEN / {} -> MISS_THEN
+
+RESERVED	<- IF / THEN / ELSE / END / GOTO
+			 / AND / OR / NOT
+			 / ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN
+IF		<- I F
+THEN	<- T H E N
+ELSE	<- E L S E
+END		<- E N D
+GOTO	<- G O T O
+
+AND		<- A N D
+OR		<- O R
+NOT		<- N O T
+
+ABS		<- A B S
+SQRT	<- S Q R T
+SIN		<- S I N
+COS		<- C O S
+TAN		<- T A N
+ASIN	<- A S I N
+ACOS	<- A C O S
+ATAN	<- A T A N
+
+A	<- [aA]
+B	<- [bB]
+C	<- [cC]
+D	<- [dD]
+E	<- [eE]
+F	<- [fF]
+G	<- [gG]
+H	<- [hH]
+I	<- [iI]
+J	<- [jJ]
+K	<- [kK]
+L	<- [lL]
+M	<- [mM]
+N	<- [nN]
+O	<- [oO]
+P	<- [pP]
+Q	<- [qQ]
+R	<- [rR]
+S	<- [sS]
+T	<- [tT]
+U	<- [uU]
+V	<- [vV]
+W	<- [wW]
+X	<- [xX]
+Y	<- [yY]
+
+Sp			<- (" " / %esc_t)*
+any			<- .
