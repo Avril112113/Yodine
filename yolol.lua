@@ -1,13 +1,15 @@
+-- This file is to test the grammar.relabel
+
 local unpack = table.unpack or unpack
 
-
-local m = require "lpeglabel"
 local re = require "relabel"
 
-local errors
+local errors  -- Set later on
 local inputFilePath = "test.yolol"
 
 
+--- Converts a value to a more readable string repersentation based on its type
+---@param v any
 local function strValueFromType(v)
 	if type(v) == "string" then
 		v = v:gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t")
@@ -19,6 +21,12 @@ local function strValueFromType(v)
 	end
 	return tostring(v)
 end
+
+--- Prints the given AST to stdout
+---@param ast table @ Is a Node of the AST
+---@param indent string
+---@param depth number
+---@param fieldName string|nil
 local function printAST(ast, indent, depth, fieldName)
 	indent = indent or "\t"
 	depth = depth or 0
@@ -50,6 +58,9 @@ local function printAST(ast, indent, depth, fieldName)
 		end
 	end
 end
+
+--- Very simple, calculates the result of the given AST if its valid
+---@param ast table @ Is a Node of the AST
 local function calc(ast)
 	if ast == nil then
 		error("Invalid AST!")
@@ -137,9 +148,21 @@ local function calc(ast)
 		end
 	end
 end
+
+--- Used to add an error to the errors list
+--- this is a function for syntatic sugar
+--- pusherror {pos=number, msg=string}
+---@param err table @ Is format of an error {pos=number, msg=string}
 local function pusherror(err)
 	table.insert(errors, err)
 end
+
+--- All binary ops are the same format and work the same so this is a helper func
+--- to convert the info given from parser into the AST
+---@param _type string
+---@param left table @ Is a Node of the AST
+---@param operator string
+---@vararg table @ Is a Node of the AST
 local function parseBinaryOpAST(_type, left, operator, ...)
 	local t = {...}
 	local right
@@ -159,15 +182,56 @@ local function parseBinaryOpAST(_type, left, operator, ...)
 end
 
 
+--- Used by the grammar to do stuff
 local defs = {
-	-- Errors
+	-- Errors (is raised with `^` in grammar, no result will be returned when matching)
 	fail="An uncaught error has occured.",
 	TEST="Test Error Msg.",
+
+	-- Errors (handled so we can continue parsing)
+	MISS_CURLY=function(pos)
+		pusherror {
+			pos=pos,
+			msg="Syntax Error: Missing closing curly bracket."
+		}
+	end,
+	MISS_EXPR=function(pos)
+		pusherror {
+			pos=pos,
+			msg="Syntax Error: Missing required expression."
+		}
+	end,
+	MISS_THEN=function(pos)
+		pusherror {
+			pos=pos,
+			msg="Syntax Error: Missing `hen' keyword."
+		}
+	end,
+	INVALID_DIGIT=function(pos)
+		pusherror {
+			pos=pos,
+			msg="Syntax Error: Invalid digit."
+		}
+	end,
+	MISS_END=function(pos)
+		pusherror {
+			pos=pos,
+			msg="Syntax Error: Missing 'end' keyword."
+		}
+	end,
+	SYNTAX_ERROR=function(pos, remaining, finish)
+		pusherror {
+			pos=pos,
+			remaing=remaining,
+			msg="Syntax Error: un-parsed input remaining '" .. remaining:gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t") .. "'"
+		}
+	end,
 
 	-- Other
 	esc_t="\t",
 
 	-- AST Building
+	--- Used only for testing and checking random stuff in the grammar
 	Test=function(...)
 		print("Test:")
 		for _, v in ipairs({...}) do
@@ -193,6 +257,14 @@ local defs = {
 		}
 	end,
 
+	assign=function(identifier, operator, value)
+		return {
+			type="assign",
+			identifier=identifier,
+			operator=operator,
+			value=value
+		}
+	end,
 	["goto"]=function(...)
 		return {
 			type="goto",
@@ -218,19 +290,12 @@ local defs = {
 			...  -- TODO
 		}
 	end,
-	assign=function(identifier, operator, value)
-		return {
-			type="assign",
-			identifier=identifier,
-			operator=operator,
-			value=value
-		}
-	end,
 
 	expression=function(...)
 		local exprs = {...}
 		-- Required to keep the ast clean of single element expr's
-		-- also values might be just there `Value` not an expr containing there `Value`
+		-- in theory there should never be an `expression` node in the ast
+		-- and if there is, then the grammar is incorrect
 		if #exprs == 1 then
 			return exprs[1]
 		end
@@ -304,44 +369,6 @@ local defs = {
 			start=start,
 			finish=finish,
 			value=value
-		}
-	end,
-
-	MISS_CURLY=function(pos)
-		pusherror {
-			pos=pos,
-			msg="Syntax Error: Missing closing curly bracket."
-		}
-	end,
-	MISS_EXPR=function(pos)
-		pusherror {
-			pos=pos,
-			msg="Syntax Error: Missing required expression."
-		}
-	end,
-	MISS_THEN=function(pos)
-		pusherror {
-			pos=pos,
-			msg="Syntax Error: Missing `hen' keyword."
-		}
-	end,
-	INVALID_DIGIT=function(pos)
-		pusherror {
-			pos=pos,
-			msg="Syntax Error: Invalid digit."
-		}
-	end,
-	MISS_END=function(pos)
-		pusherror {
-			pos=pos,
-			msg="Syntax Error: Missing 'end' keyword."
-		}
-	end,
-	SYNTAX_ERROR=function(pos, remaining, finish)
-		pusherror {
-			pos=pos,
-			remaing=remaining,
-			msg="Syntax Error: un-parsed input remaining '" .. remaining:gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t") .. "'"
 		}
 	end,
 }
