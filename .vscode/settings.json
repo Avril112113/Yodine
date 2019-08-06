@@ -1,5 +1,6 @@
 {
     "Lua.diagnostics.globals": [
         "unpack"
-    ]
+    ],
+    "Lua.runtime.version": "LuaJIT"
 }
