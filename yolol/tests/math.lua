@@ -101,5 +101,7 @@ pushTest("math", function()
 			operator="+"
 		}
 	}), "boolean math") and ok
+	-- TODO
+	-- ok = checkAST("y=x!=12 y=x!!=12 y=x!==12", astLines({}), "factorial math") and ok
 	return ok
 end)

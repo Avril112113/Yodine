@@ -1,4 +1,4 @@
-# Repo Info
+# Github Repo Info
 This is put on github for help from others  
 but when its done you may use it as you wish for your own projects.  
 

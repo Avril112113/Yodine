@@ -2,9 +2,7 @@ local re = require "relabel"
 local yolol = require "yolol.init"
 local helpers = require "yolol.tests.helpers"
 
-local input = [[
-// 1 and 1 or 0 == 1 != 0 > 0 <= 1 < 2 >= 1
-1 != 0
+local input = [[y=x!=12 y=x!!=12 y=x!==12
 ]]
 local result = yolol.parse(input)
 
@@ -45,6 +43,7 @@ if result ~= nil then
 			end
 		end
 	end
+	-- print(); print(helpers.serializeTable(result.ast))
 else
 	print("No parsed data.")
 end

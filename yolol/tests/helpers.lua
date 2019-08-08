@@ -140,7 +140,7 @@ end
 ---@param depth number
 ---@param fieldName string|nil
 local function printAST(ast, indent, depth, fieldName)
-	indent = indent or "\t"
+	indent = indent or "    "
 	depth = depth or 0
 	print(string.rep(indent, depth) .. (function()
 		if fieldName ~= nil then
@@ -171,10 +171,46 @@ local function printAST(ast, indent, depth, fieldName)
 	end
 end
 
+local function _serializeValue(s)
+	return string.format("%q", s)
+end
+local function serializeTable(tbl, indent, depth)
+	indent =  "    "
+	depth = depth or 0
+	local out = "{\n"
+	local lastI = 0
+	for i, v in ipairs(tbl) do
+		out = out .. string.rep(indent, depth+1)
+		if type(v) == "table" then
+			out = out .. serializeTable(v, indent, depth+1) .. ",\n"
+		else
+			out = out .. _serializeValue(v) .. ",\n"
+		end
+		lastI = i
+	end
+	for i, v in pairs(tbl) do
+		if type(i) == "number" and i > lastI or type(i) ~= "number" then
+			out = out .. string.rep(indent, depth+1)
+			if type(i) == "string" then
+				out = out .. i .. " = "
+			else
+				out = out .. "[" .. _serializeValue(i) .. "]" .. " = "
+			end
+			if type(v) == "table" then
+				out = out .. serializeTable(v, indent, depth+1) .. ",\n"
+			else
+				out = out .. _serializeValue(v) .. ",\n"
+			end
+		end
+	end
+	return out:gsub(",\n$", "\n") .. string.rep(indent, depth) .. "}"
+end
+
 return {
 	strValueFromType=strValueFromType,
 	calc=calc,
 	printAST=printAST,
 	tblEqual=tblEqual,
-	tblPrint=tblPrint
+	tblPrint=tblPrint,
+	serializeTable=serializeTable
 }

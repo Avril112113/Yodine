@@ -28,8 +28,9 @@ prec_1		<- unary_post / unary_pre / value
 neg			<- ({neg_op} Sp (value_nop / prec_1 / {} -> MISS_EXPR)) -> neg
 prec_2		<- neg / prec_1
 
-fact1		<- (value_nop / prec_2) Sp fac_op
-fact2		<- fact1 Sp fac_op
+fact		<- (!"!=" / &"!==") fac_op
+fact1		<- (value_nop / prec_2) Sp fact
+fact2		<- fact1 Sp fact
 prec_3		<- fact1 / fact2 / prec_2
 
 named		<- ({named_op} Sp (value_nop / prec_3 / {} -> MISS_EXPR)) -> keyword
