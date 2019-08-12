@@ -1,0 +1,119 @@
+local function deepCopy(tbl)
+	local newTbl = {}
+	if getmetatable(tbl) ~= nil then
+		setmetatable(newTbl, getmetatable(tbl))
+	end
+	for i,v in pairs(tbl) do
+		if type(v) == "table" then
+			newTbl[i] = deepCopy(v)
+		else
+			newTbl[i] = v
+		end
+	end
+	return newTbl
+end
+
+
+---@class MapObject
+local MapObject = {
+	-- NOTE: a device is just an 'extention' of this (Technicaly its the other way round in code)
+	---@type number
+	x=nil,
+	---@type number
+	y=nil,
+	---@type table<MapObject,MapObject>
+	connections=nil
+}
+MapObject.__index = MapObject
+function MapObject.new(x, y, device)
+	local _self = deepCopy(device)
+	_self.x = x
+	_self.y = y
+	_self.connections = {}
+	_self._device = device  -- just incase we need the originial reference for comparison for example
+	local self = setmetatable(_self, MapObject)
+	return self
+end
+
+---@class Map
+local Map = {
+	---@type MapObject[]
+	objects=nil
+}
+Map.__index = Map
+---@return Map
+function Map.new()
+	local self = setmetatable({
+		objects={}
+	}, Map)
+	return self
+end
+
+---@param x number
+---@param y number
+---@param device Device
+function Map:createObject(x, y, device)
+	local obj = MapObject.new(x, y, device)
+	if obj.init then
+		obj:init()
+	end
+	table.insert(self.objects, obj)
+	return obj
+end
+
+---@param x number
+---@param y number
+function Map:getObjectAt(x, y)
+	for i, v in pairs(self.objects) do
+		if v.getSize ~= nil then
+			local width, height = v:getSize()
+			if IsInside(v.x, v.y, v.x+width, v.y+height, x, y) then
+				return v
+			end
+		end
+	end
+end
+
+---@param objA MapObject
+---@param objB MapObject
+function Map:connect(objA, objB)
+	objA.connections[objB] = objB
+	objB.connections[objA] = objA
+end
+
+---@param objA MapObject
+---@param objB MapObject
+function Map:disconnect(objA, objB)
+	objA.connections[objB] = nil
+	objB.connections[objA] = nil
+end
+
+---@param objA MapObject
+---@param objB MapObject
+function Map:isConnected(objA, objB)
+	return objA.connections[objB] ~= nil or objB.connections[objA] ~= nil
+end
+
+---@param origin MapObject
+---@param fieldName string
+---@param newValue string|number
+function Map:changeField(origin, fieldName, newValue)
+	local processed = {}
+	local toProcess = {origin}
+	while #toProcess > 0 do
+		local obj = table.remove(toProcess)
+		processed[obj] = obj
+		for _, v in pairs(obj.fields) do
+			if v.name == fieldName then
+				v.value = v.changed and v:changed(newValue) or newValue
+			end
+		end
+		for _, v in pairs(obj.connections) do
+			if processed[v] == nil then
+				table.insert(toProcess, v)
+			end
+		end
+	end
+end
+
+return Map

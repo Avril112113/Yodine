@@ -1,3 +1,5 @@
+-- used to test yolol parser when developing stuff for it
+
 local re = require "relabel"
 local yolol = require "yolol.init"
 local helpers = require "yolol.tests.helpers"

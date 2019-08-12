@@ -58,7 +58,7 @@ function camera:mousePositionC()-- DEPERCATED use cameraPositionCenterScreen or 
 end
 
 function camera:dragPosition() --love.update(dt)
-	if love.mouse.isDown(1) then
+	if love.mouse.isDown(2) then
 		local mx,my = self:mousePosition()
 		if mouse2Down == false then
 			startPosX = mx
