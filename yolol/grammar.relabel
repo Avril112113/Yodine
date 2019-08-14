@@ -15,23 +15,21 @@ if			<- Sp (if_body Sp else_body? Sp need_end) -> if
 if_body		<- (IF Sp need_expression Sp need_then block) -> if_body
 else_body	<- (ELSE Sp block) -> else_body
 
-assign		<- Sp (identifier Sp {assign_op} Sp need_expression)
-				-> assign
+assign		<- Sp (identifier Sp {assign_op} Sp need_expression) -> assign
 
 expression		<- value_nop / prec_11 -> expression
 need_expression	<- (value_nop / prec_11 / {} -> MISS_EXPR) -> expression
 
-unary_pre	<- pre_post_op Sp (value / {} -> MISS_EXPR)
-unary_post	<- value Sp pre_post_op
+unary_pre	<- ({pre_post_op} Sp (value / {} -> MISS_EXPR)) -> unary_add
+unary_post	<- (value Sp {pre_post_op}) -> unary_add
 prec_1		<- unary_post / unary_pre / value
 
 neg			<- ({neg_op} Sp (value_nop / prec_1 / {} -> MISS_EXPR)) -> neg
 prec_2		<- neg / prec_1
 
 fact		<- (!"!=" / &"!==") fac_op
-fact1		<- (value_nop / prec_2) Sp fact
-fact2		<- fact1 Sp fact
-prec_3		<- fact1 / fact2 / prec_2
+fact1		<- ((value_nop / prec_2) Sp {fact}+) -> fact
+prec_3		<- fact1 / prec_2
 
 named		<- ({named_op} Sp (value_nop / prec_3 / {} -> MISS_EXPR)) -> keyword
 prec_4		<- named / prec_3
@@ -64,7 +62,7 @@ value 	<- string
 value_nop	<- value Sp !any_op
 group	<- '(' Sp need_expression Sp (')' / {} -> MISS_CURLY)
 
-identifier				<- data_field_identifier / local_identifier
+identifier				<- (data_field_identifier / local_identifier) -> identifier
 local_identifier		<- RESERVED [a-zA-Z0-9_]+ / !RESERVED [a-zA-Z_][a-zA-Z0-9_]*
 data_field_identifier	<- ':' [a-zA-Z0-9_]+
 
@@ -72,7 +70,7 @@ comment	<- ({} '//' {(!%nl .)*} {} %nl) -> comment
 
 any_op		<- assign_op / pre_post_op / add_op / neg_op / neg_op / mul_op / exp_op / fac_op / neq_op / eq_op / named_op / AND / OR
 assign_op	<- '=' / '+=' / '-=' / '*=' / '/=' / '%='
-named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN
+named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN / NOT
 pre_post_op	<- '++' / '--'
 add_op		<- [+-]
 neg_op		<- '-'
@@ -93,6 +91,7 @@ need_then	<- THEN / {} -> MISS_THEN
 RESERVED	<- IF / THEN / ELSE / END / GOTO
 			 / AND / OR / NOT
 			 / ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN
+
 IF		<- I F
 THEN	<- T H E N
 ELSE	<- E L S E

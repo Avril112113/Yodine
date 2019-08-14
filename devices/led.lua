@@ -29,6 +29,7 @@ local LED = {
 }
 
 function LED:draw()
+	assert(self.fields.LEDState.value ~= nil)
 	-- everything is already transformed, just draw as 0, 0 was top-left
 	local LEDImg = GetImage("imgs/led.png")
 	if self.fields.LEDState.value == 0 then

@@ -31,6 +31,9 @@ function MapObject.new(x, y, device)
 	_self.y = y
 	_self.connections = {}
 	_self._device = device  -- just incase we need the originial reference for comparison for example
+	for i, v in pairs(_self.fields) do
+		v.value = v.default
+	end
 	local self = setmetatable(_self, MapObject)
 	return self
 end
@@ -98,13 +101,16 @@ end
 ---@param fieldName string
 ---@param newValue string|number
 function Map:changeField(origin, fieldName, newValue)
+	assert(origin ~= nil)
+	assert(fieldName ~= nil)
+	assert(newValue ~= nil)
 	local processed = {}
 	local toProcess = {origin}
 	while #toProcess > 0 do
 		local obj = table.remove(toProcess)
 		processed[obj] = obj
 		for _, v in pairs(obj.fields) do
-			if v.name == fieldName then
+			if v.name:lower() == fieldName:lower() then
 				v.value = v.changed and v:changed(newValue) or newValue
 			end
 		end
@@ -113,6 +119,41 @@ function Map:changeField(origin, fieldName, newValue)
 				table.insert(toProcess, v)
 			end
 		end
+	end
+end
+
+---@param origin MapObject
+---@param fieldName string
+function Map:getField(origin, fieldName)
+	assert(origin ~= nil)
+	assert(fieldName ~= nil)
+	local values = {}
+	local processed = {}
+	local toProcess = {origin}
+	while #toProcess > 0 do
+		local obj = table.remove(toProcess)
+		processed[obj] = obj
+		for _, v in pairs(obj.fields) do
+			if v.name:lower() == fieldName:lower() then
+				table.insert(values, v.value)
+			end
+		end
+		for _, v in pairs(obj.connections) do
+			if processed[v] == nil then
+				table.insert(toProcess, v)
+			end
+		end
+	end
+	if #values <= 0 then
+		return nil  -- undefined handled by caller
+	else
+		local value = values[1]
+		for i, v in pairs(values) do
+			if v ~= value then
+				return nil, true
+			end
+		end
+		return value
 	end
 end
 

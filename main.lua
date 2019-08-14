@@ -1,3 +1,4 @@
+--[[TMP]] require "test"
 require "utils"  -- provides a set of global functions
 
 -- Constant's and defining locals
@@ -7,27 +8,41 @@ DefaultFont = GetFont()
 Consola = love.graphics.newFont("Consola.ttf")
 
 local camera = require "camera"
-local yolol = require "yolol"
-local helpers = require "yolol.tests.helpers"
-
 local devices = require "devices.init"
 local Map = require "Map"
 
 
-local loadedMap = Map.new()
+LoadedMap = Map.new()
 -- Testing stuff
-loadedMap:createObject(0, -100, devices.button)
-loadedMap:createObject(100, -100, devices.led)
-loadedMap:createObject(-100, 0, devices.chip)
+local testButton = LoadedMap:createObject(0, -100, devices.button)
+local testLED = LoadedMap:createObject(100, -100, devices.led)
+---@type Device_Chip
+local testChip = LoadedMap:createObject(-100, 0, devices.chip)
+LoadedMap:connect(testButton, testLED)
+LoadedMap:connect(testButton, testChip)
+
+local lines = testChip.lines
+lines[1] = ":LEDState = 0.5 * 2"
+lines[3] = ":LEDState = 0 / 1"
+lines[5] = ":LEDState = 1 ^ 1"
+lines[9] = ":LEDState = 0"
+lines[10] = ":LEDState = 0 / 0"
+--[[
+lines[1] = ":LEDState = 1"
+lines[3] = ":LEDState = 0"
+lines[5] = ":LEDState = 2-1"
+lines[9] = ":LEDState = not :LEDState"
+]]
+testChip:codeChanged()
 
 -- Variables
 local connectionTarget
-local centerDrawObject  -- used if a map object has a :drawGUI(), there are other functions for input ect
+CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
 
 
 function SetCenterDrawObject(obj)
 	if obj == nil then
-		centerDrawObject = nil
+		CenterDrawObject = nil
 	else
 		if obj.drawGUI == nil then
 			error("Attempt to set center draw object but does not have :drawGUI()")
@@ -35,10 +50,9 @@ function SetCenterDrawObject(obj)
 		if obj.getSizeGUI == nil then
 			error("Attempt to set center draw object but does not have :getSizeGUI()")
 		end
-		centerDrawObject = obj
+		CenterDrawObject = obj
 	end
 end
-
 
 local function genBackgroundImage()
 	local imgData = love.image.newImageData(love.graphics.getWidth()+BackgroundCellSize, love.graphics.getHeight()+BackgroundCellSize)
@@ -52,6 +66,7 @@ local function genBackgroundImage()
 	imgData:mapPixel(mapCells)
 	background = love.graphics.newImage(imgData)
 end
+
 
 function love.load()
 	love.window.maximize()
@@ -80,7 +95,7 @@ function love.draw()
 
 		love.graphics.setColor(0.3, 0.3, 0.3, 1)
 		love.graphics.setLineWidth(3)
-		for _, v in pairs(loadedMap.objects) do
+		for _, v in pairs(LoadedMap.objects) do
 			for _, other in pairs(v.connections) do
 				local vOffX, vOffY = 0, 0
 				local otherOffX, otherOffY = 0, 0
@@ -90,7 +105,7 @@ function love.draw()
 			end
 		end
 
-		for _, v in pairs(loadedMap.objects) do
+		for _, v in pairs(LoadedMap.objects) do
 			love.graphics.push()
 				love.graphics.translate(v.x, v.y)
 				if v.draw == nil then
@@ -104,11 +119,11 @@ function love.draw()
 		end
 	camera:unset()
 
-	if centerDrawObject ~= nil and centerDrawObject.drawGUI ~= nil and centerDrawObject.getSizeGUI ~= nil then
+	if CenterDrawObject ~= nil and CenterDrawObject.drawGUI ~= nil and CenterDrawObject.getSizeGUI ~= nil then
 		love.graphics.push()
-			local cdo_w, cdo_h = centerDrawObject:getSizeGUI()
+			local cdo_w, cdo_h = CenterDrawObject:getSizeGUI()
 			love.graphics.translate((ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2))
-			centerDrawObject:drawGUI()
+			CenterDrawObject:drawGUI()
 		love.graphics.pop()
 	end
 
@@ -119,35 +134,42 @@ function love.draw()
 end
 
 function love.update(dt)
+	-- TODO: fix able to use RMB while hovered over a CenterDrawObject (or potential GUI)
 	camera:dragPosition()
+
+	for _, v in pairs(LoadedMap.objects) do
+		if v.update then
+			v:update(dt)
+		end
+	end
 end
 
 function love.mousereleased(x, y, button)
 	local ww, wh = love.graphics.getWidth(), love.graphics.getHeight()
 	local worldX, worldY = camera:cameraPosition(x, y)
-	local has_cdo, cdo_x, cdo_y, cdo_w, cdo_h, cdo_mx, cdo_my
-	if centerDrawObject ~= nil and centerDrawObject.getSizeGUI ~= nil then
+	local has_cdo = false
+	local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
+	local cdo_mx, cdo_my
+	if cdo_x ~= nil then
 		has_cdo = true
-		cdo_w, cdo_h = centerDrawObject:getSizeGUI()
-		cdo_x, cdo_y = (ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2)
 		cdo_mx, cdo_my = x-cdo_x, y-cdo_y
 	end
 	if button == 3 then
-		local obj = loadedMap:getObjectAt(worldX, worldY)
+		local obj = LoadedMap:getObjectAt(worldX, worldY)
 		if connectionTarget ~= nil and obj ~= nil then
-			if loadedMap:isConnected(obj, connectionTarget) then
-				loadedMap:disconnect(obj, connectionTarget)
+			if LoadedMap:isConnected(obj, connectionTarget) then
+				LoadedMap:disconnect(obj, connectionTarget)
 			else
-				loadedMap:connect(obj, connectionTarget)
+				LoadedMap:connect(obj, connectionTarget)
 			end
 			connectionTarget = nil
 		else
 			connectionTarget = obj
 		end
 	elseif has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
-		centerDrawObject:clickedGUI(cdo_mx, cdo_my, button)
+		CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
 	elseif button == 1 then
-		local obj = loadedMap:getObjectAt(worldX, worldY)
+		local obj = LoadedMap:getObjectAt(worldX, worldY)
 		if obj then
 			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
@@ -158,16 +180,16 @@ function love.mousereleased(x, y, button)
 end
 
 function love.keypressed(key)
-	if centerDrawObject ~= nil and key == "escape" then
+	if CenterDrawObject ~= nil and key == "escape" then
 		SetCenterDrawObject()
-	elseif centerDrawObject ~= nil and centerDrawObject.keypressedGUI then
-		centerDrawObject:keypressedGUI(key)
+	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
+		CenterDrawObject:keypressedGUI(key)
 	end
 end
 
 function love.textinput(text)
-	if centerDrawObject.textinputGUI then
-		centerDrawObject:textinputGUI(text)
+	if CenterDrawObject ~= nil and CenterDrawObject.textinputGUI then
+		CenterDrawObject:textinputGUI(text)
 	end
 end
 

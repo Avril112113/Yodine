@@ -18,25 +18,37 @@ end
 --- All binary ops are the same format and work the same so this is a helper func
 --- to convert the info given from parser into the AST
 ---@param _type string
+---@param leftTree boolean @ Weather or not it constructs additional args '...' on the left side
 ---@param left table @ Is a Node of the AST
 ---@param operator string
 ---@vararg table @ Is a Node of the AST
-local function parseBinaryOpAST(_type, left, operator, ...)
+local function parseBinaryOpAST(_type, leftTree, left, operator, ...)
 	local t = {...}
-	local right
-	if #t < 1 then
-		right = nil  -- NOTE: this error should be caught and put into errors list
-	elseif #t == 1 then
-		right = t[1]
-	elseif #t > 1 then
-		right = parseBinaryOpAST(_type, unpack(t))
+	if leftTree == true and #t > 1 then
+		local right = table.remove(t, #t)
+		local _operator = table.remove(t, #t)
+		return {
+			type=_type,
+			left=parseBinaryOpAST(_type, leftTree, left, operator, unpack(t)),
+			operator=_operator,
+			right=right
+		}
+	else
+		local right
+		if #t < 1 then
+			right = nil  -- NOTE: this error should be caught and put into errors list
+		elseif #t == 1 then
+			right = t[1]
+		elseif #t > 1 then
+			right = parseBinaryOpAST(_type, leftTree, unpack(t))
+		end
+		return {
+			type=_type,
+			left=left,
+			operator=operator,
+			right=right
+		}
 	end
-	return {
-		type=_type,
-		left=left,
-		operator=operator,
-		right=right
-	}
 end
 
 ---@class YDEFS
@@ -48,36 +60,42 @@ local defs = {
 	-- Errors (handled so we can continue parsing)
 	MISS_CURLY=function(pos)
 		pusherror {
+			type="MISS_CURLY",
 			pos=pos,
 			msg="Syntax Error: Missing closing curly bracket."
 		}
 	end,
 	MISS_EXPR=function(pos)
 		pusherror {
+			type="MISS_EXPR",
 			pos=pos,
 			msg="Syntax Error: Missing required expression."
 		}
 	end,
 	MISS_THEN=function(pos)
 		pusherror {
+			type="MISS_THEN",
 			pos=pos,
 			msg="Syntax Error: Missing `hen' keyword."
 		}
 	end,
 	INVALID_DIGIT=function(pos)
 		pusherror {
+			type="INVALID_DIGIT",
 			pos=pos,
 			msg="Syntax Error: Invalid digit."
 		}
 	end,
 	MISS_END=function(pos)
 		pusherror {
+			type="MISS_END",
 			pos=pos,
 			msg="Syntax Error: Missing 'end' keyword."
 		}
 	end,
 	SYNTAX_ERROR=function(pos, remaining, finish)
 		pusherror {
+			type="SYNTAX_ERROR",
 			pos=pos,
 			remaing=remaining,
 			msg="Syntax Error: un-parsed input remaining '" .. remaining:gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t") .. "'"
@@ -153,13 +171,13 @@ local defs = {
 		}
 	end,
 	mul=function(...)
-		return parseBinaryOpAST("mul", ...)
+		return parseBinaryOpAST("mul", false, ...)
 	end,
 	add=function(...)
-		return parseBinaryOpAST("add", ...)
+		return parseBinaryOpAST("add", false, ...)
 	end,
 	exp=function(...)
-		return parseBinaryOpAST("exp", ...)
+		return parseBinaryOpAST("exp", false, ...)
 	end,
 	keyword=function(operator, operand)
 		return {
@@ -176,16 +194,44 @@ local defs = {
 		}
 	end,
 	["or"]=function(...)
-		return parseBinaryOpAST("or", ...)
+		return parseBinaryOpAST("or", true, ...)
 	end,
 	["and"]=function(...)
-		return parseBinaryOpAST("and", ...)
+		return parseBinaryOpAST("and", true, ...)
 	end,
 	neq=function(...)
-		return parseBinaryOpAST("eq", ...)
+		return parseBinaryOpAST("eq", false, ...)
 	end,
 	eq=function(...)
-		return parseBinaryOpAST("neq", ...)
+		return parseBinaryOpAST("neq", false, ...)
+	end,
+	fact=function(value, operator, ...)
+		local result = {
+			type="fact",
+			operator=operator,
+			operand=value
+		}
+		for i, v in pairs({...}) do
+			result = {
+				type="fact",
+				operator=v,
+				operand=result
+			}
+		end
+		return result
+	end,
+	unary_add=function(a, b)
+		local operator, operand
+		if type(a) == "string" then
+			operator, operand = a, b
+		else
+			operator, operand = b, a
+		end
+		return {
+			type="unary_add",
+			operator=operator,
+			operand=operand
+		}
 	end,
 
 	string=function(str)
