@@ -134,8 +134,8 @@ function love.draw()
 end
 
 function love.update(dt)
-	-- TODO: fix able to use RMB while hovered over a CenterDrawObject (or potential GUI)
-	camera:dragPosition()
+	-- TODO: fix able to use RMB while hovered over a CenterDrawObject (or other potential GUI)
+	camera:dragPosition(2)
 
 	for _, v in pairs(LoadedMap.objects) do
 		if v.update then

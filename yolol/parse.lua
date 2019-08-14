@@ -21,7 +21,7 @@ end
 ---@param leftTree boolean @ Weather or not it constructs additional args '...' on the left side
 ---@param left table @ Is a Node of the AST
 ---@param operator string
----@vararg table @ Is a Node of the AST
+--- @vararg table @ Is a Node of the AST (is not working with sumneko's vscode extention for lua)
 local function parseBinaryOpAST(_type, leftTree, left, operator, ...)
 	local t = {...}
 	if leftTree == true and #t > 1 then
