@@ -1,8 +1,12 @@
 # Github Repo Info
 This is put on github for help from others  
-but when its done you may use it as you wish for your own projects.  
+but you may use it as you wish for your own projects.  
 
 Just do not take ownership of what is not yours. (i should add a licence but idk how they work)  
+
+# The project
+This is made to attempt at emulating a data network from the game StarBase (not out yet)  
+its a 2D editor not 3D (as of right now)  
 
 # grammar.relabel
 When editing the grammar i made a vscode extension for fancy colors  
