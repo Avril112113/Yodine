@@ -4,7 +4,7 @@ local re = require "relabel"
 local yolol = require "yolol.init"
 local helpers = require "yolol.tests.helpers"
 
-local input = [[1 and 2 and 3
+local input = [[if 1 then a=1 else a=2 end
 ]]
 local result = yolol.parse(input)
 

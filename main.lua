@@ -27,12 +27,7 @@ lines[3] = ":LEDState = 0 / 1"
 lines[5] = ":LEDState = 1 ^ 1"
 lines[9] = ":LEDState = 0"
 lines[10] = ":LEDState = 0 / 0"
---[[
-lines[1] = ":LEDState = 1"
-lines[3] = ":LEDState = 0"
-lines[5] = ":LEDState = 2-1"
-lines[9] = ":LEDState = not :LEDState"
-]]
+lines[12] = "goto 1"
 testChip:codeChanged()
 
 -- Variables

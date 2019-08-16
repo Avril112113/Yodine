@@ -95,6 +95,14 @@ function vm:evalExpr(ast)
 				error("STOP_LINE_EXECUTION")
 			end
 			return leftValue / rightValue
+		elseif ast.operator == "%" then
+			if rightValue == 0 then
+				self:pushError({
+					msg="Attempted modulo by zero."
+				})
+				error("STOP_LINE_EXECUTION")
+			end
+			return leftValue % rightValue
 		elseif ast.operator == "+" then
 			return leftValue + rightValue
 		elseif ast.operator == "-" then
@@ -139,6 +147,8 @@ end
 function vm:executeStatement(ast)
 	if ast.type == "assign" then
 		self:st_assign(ast)
+	elseif ast.type == "goto" then
+		self:st_goto(ast)
 	elseif ast.type == "comment" then
 	else
 		errorVM("unknown ast node type " .. ast.type)
@@ -153,6 +163,23 @@ function vm:st_assign(ast)
 		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
 	else
 		self.variables[name] = value
+	end
+end
+
+function vm:st_goto(ast)
+	local ln = self:evalExpr(ast.expression)
+	if type(ln) ~= "number" then
+		self:pushError({
+			pos=ast.pos,
+			msg="attempt to goto a invalid line, it was not a number."
+		})
+	else
+		if ln <= 0 then
+			ln = 1
+		elseif ln > 20 then
+			ln = 20
+		end
+		self.line = ln-1
 	end
 end
 

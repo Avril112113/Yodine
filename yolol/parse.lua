@@ -127,10 +127,10 @@ local defs = {
 			value=value
 		}
 	end,
-	["goto"]=function(...)
+	["goto"]=function(expression)
 		return {
 			type="goto",
-			...  -- TODO
+			expression=expression
 		}
 	end,
 	["if"]=function(...)

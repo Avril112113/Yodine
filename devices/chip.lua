@@ -84,7 +84,6 @@ function chip:draw(opened)
 	love.graphics.setFont(Consola)
 	for ln=1,#self.lines do
 		local lnStr = tostring(ln)
-		lnStr = string.rep(" ", 2-#lnStr) .. lnStr
 		if ln%2 == 0 then
 			love.graphics.setColor(0, 0, 0.6)
 		else
@@ -93,6 +92,13 @@ function chip:draw(opened)
 		love.graphics.rectangle("fill", 0, self.lineHeight*(ln-1), self.lineWidth, self.lineHeight)
 		love.graphics.setColor(0, 0, 0.4)
 		love.graphics.rectangle("fill", 0, self.lineHeight*(ln-1), 24, self.lineHeight)
+	end
+	love.graphics.setColor(1, 0.49, 0, 0.6)
+	love.graphics.rectangle("fill", 24, self.lineHeight*self.vm.line, self.lineWidth, self.lineHeight)
+	for ln=1,#self.lines do
+		local lnStr = tostring(ln)
+		lnStr = string.rep(" ", 2-#lnStr) .. lnStr
+
 		love.graphics.setColor(1, 1, 1, 1)
 		love.graphics.print(lnStr, 2, self.lineHeight*(ln-1)+2)
 		love.graphics.print(self.lines[ln], 26, self.lineHeight*(ln-1)+2)
