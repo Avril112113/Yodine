@@ -3,9 +3,25 @@ local function errorVM(msg, ...)
 end
 
 
+---@class VM_ErrMsg
+local VM_ErrMsg = {
+	---@type nil|number
+	pos=nil,
+	---@type nil|string
+	msg=nil
+}
+
+
 local vm = {
+	---@type Device_Chip
+	chip=nil,
 	---@type YAST_Program
 	ast=nil,
+	---@type table<number,VM_ErrMsg>
+	errors=nil,
+
+	---@type table<string,string|number>
+	variables=nil,
 	---@type number
 	line=nil
 }
@@ -27,6 +43,16 @@ end
 
 function vm:pushError(errTbl)
 	table.insert(self.errors[self.line], errTbl)
+end
+
+---@param name string
+---@param value string|number
+function vm:setVariableFromName(name, value)
+	if name:sub(1, 1) == ":" then
+		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
+	else
+		self.variables[name] = value
+	end
 end
 
 --- Runs all code in the next line
@@ -138,6 +164,28 @@ function vm:evalExpr(ast)
 		else
 			errorVM("invalid keyword " .. ast.operator .. " for keyword handling in eval, expected a valid keyword")
 		end
+	elseif ast.type == "pre_add" or ast.type == "post_add" then
+		local identifier
+		if ast.operand ~= nil and ast.operand.type == "identifier" then
+			identifier = ast.operand.name
+		end
+		local value = self:evalExpr(ast.operand)
+		local newValue
+		if ast.operator == "++" then
+			newValue = value + 1
+		elseif ast.operator == "--" then
+			newValue = value - 1
+		else
+			errorVM("invalid operator " .. ast.operator .. " for unary_add handling in eval, expected a valid operator")
+		end
+		if identifier ~= nil then
+			self:setVariableFromName(identifier, newValue)
+		end
+		if ast.type == "pre_add" then
+			return newValue
+		else
+			return value
+		end
 	else
 		errorVM("invalid type " .. ast.type .. " for an eval, expected a valid expresstion type")
 	end
@@ -159,11 +207,7 @@ function vm:st_assign(ast)
 	if ast.operator ~= "=" then errorVM("assign operator " .. tostring(ast.operator) .. " is not supported yet.") end
 	local name = ast.identifier.name
 	local value = self:evalExpr(ast.value)
-	if name:sub(1, 1) == ":" then
-		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
-	else
-		self.variables[name] = value
-	end
+	self:setVariableFromName(name, value)
 end
 
 function vm:st_goto(ast)

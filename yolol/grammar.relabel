@@ -20,8 +20,8 @@ assign		<- Sp (identifier Sp {assign_op} Sp need_expression) -> assign
 expression		<- value_nop / prec_11 -> expression
 need_expression	<- (value_nop / prec_11 / {} -> MISS_EXPR) -> expression
 
-unary_pre	<- ({pre_post_op} Sp (value / {} -> MISS_EXPR)) -> unary_add
-unary_post	<- (value Sp {pre_post_op}) -> unary_add
+unary_pre	<- ({pre_post_op} Sp (value / {} -> MISS_EXPR)) -> pre_add
+unary_post	<- (value Sp {pre_post_op}) -> post_add
 prec_1		<- unary_post / unary_pre / value
 
 neg			<- ({neg_op} Sp (value_nop / prec_1 / {} -> MISS_EXPR)) -> neg

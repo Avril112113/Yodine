@@ -7,6 +7,8 @@ local background
 DefaultFont = GetFont()
 Consola = love.graphics.newFont("Consola.ttf")
 
+local helpers = require "yolol.tests.helpers"
+
 local camera = require "camera"
 local devices = require "devices.init"
 local Map = require "Map"
@@ -22,12 +24,16 @@ LoadedMap:connect(testButton, testLED)
 LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
+lines[1] = "x1 = 1 y1 = ++x1"
+lines[2] = "x2 = 1 y2 = x2++"
+--[[
 lines[1] = ":LEDState = 0.5 * 2"
 lines[3] = ":LEDState = 0 / 1"
 lines[5] = ":LEDState = 1 ^ 1"
 lines[9] = ":LEDState = 0"
 lines[10] = ":LEDState = 0 / 0"
 lines[12] = "goto 1"
+--]]
 testChip:codeChanged()
 
 -- Variables
@@ -177,6 +183,10 @@ end
 function love.keypressed(key)
 	if CenterDrawObject ~= nil and key == "escape" then
 		SetCenterDrawObject()
+	elseif CenterDrawObject == nil and key == "space" then
+		for i, v in pairs(testChip.vm.variables) do
+			print(i, helpers.strValueFromType(v))
+		end
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
 	end

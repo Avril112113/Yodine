@@ -220,15 +220,16 @@ local defs = {
 		end
 		return result
 	end,
-	unary_add=function(a, b)
-		local operator, operand
-		if type(a) == "string" then
-			operator, operand = a, b
-		else
-			operator, operand = b, a
-		end
+	pre_add=function(operator, operand)
 		return {
-			type="unary_add",
+			type="pre_add",
+			operator=operator,
+			operand=operand
+		}
+	end,
+	post_add=function(operand, operator)
+		return {
+			type="post_add",
 			operator=operator,
 			operand=operand
 		}
