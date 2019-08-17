@@ -133,23 +133,33 @@ local defs = {
 			expression=expression
 		}
 	end,
-	["if"]=function(...)
+	["if"]=function(ifBody, elseBody)
 		return {
 			type="if",
-			...  -- TODO
+			condition=ifBody.condition,
+			body=ifBody.body,
+			else_body=elseBody.body
 		}
 	end,
-	if_body=function(cond, ...)
+	if_body=function(condition, ...)
+		-- gets used only by `if`, not in the resulting AST
 		return {
 			type="if_body",
-			cond=cond,
-			...
+			condition=condition,
+			body={...}
 		}
 	end,
 	else_body=function(...)
+		-- gets used only by `if`, not in the resulting AST
 		return {
 			type="else_body",
-			...  -- TODO
+			body={...}
+		}
+	end,
+	expression_stmt=function(expression)
+		return {
+			type="expression",
+			expression=expression
 		}
 	end,
 
@@ -157,7 +167,7 @@ local defs = {
 		local exprs = {...}
 		-- Required to keep the ast clean of single element expr's
 		-- in theory there should never be an `expression` node in the ast
-		-- and if there is, then the grammar is incorrect
+		-- and if there is, then the grammar is incorrect (unless its origin is expression_stmt)
 		if #exprs == 1 then
 			return exprs[1]
 		end

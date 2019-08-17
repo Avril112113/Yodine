@@ -8,6 +8,8 @@ local VM_ErrMsg = {
 	---@type nil|number
 	pos=nil,
 	---@type nil|string
+	level=nil,
+	---@type nil|string
 	msg=nil
 }
 
@@ -41,8 +43,13 @@ function vm.new(ast, chip)
 	return self
 end
 
+---@param errTbl VM_ErrMsg
 function vm:pushError(errTbl)
 	table.insert(self.errors[self.line], errTbl)
+end
+
+function vm:haltLine()
+	error("STOP_LINE_EXECUTION")
 end
 
 ---@param name string
@@ -55,14 +62,8 @@ function vm:setVariableFromName(name, value)
 	end
 end
 
---- Runs all code in the next line
-function vm:step()
-	self.line = (self.line % #self.ast.lines) + 1
-	---@type YAST_Line
-	local line = self.ast.lines[self.line]
-	self.errors[self.line] = {}
-
-	for _, v in ipairs(line.code) do
+function vm:execCode(code)
+	for _, v in ipairs(code) do
 		-- i think empty lines cause empty string to be in line.code ???
 		if type(v) ~= "string" then
 			local ok, result = pcall(function() self:executeStatement(v) end)
@@ -73,6 +74,16 @@ function vm:step()
 			end
 		end
 	end
+end
+
+--- Runs all code in the next line
+function vm:step()
+	self.line = (self.line % #self.ast.lines) + 1
+	---@type YAST_Line
+	local line = self.ast.lines[self.line]
+	self.errors[self.line] = {}
+
+	self:execCode(line.code)
 end
 
 function vm:evalExpr(ast)
@@ -95,10 +106,10 @@ function vm:evalExpr(ast)
 			value = v
 			if multipleDifferentValues then
 				self:pushError({
-					--pos=ast.pos,
+					level="error",
 					msg="Found multiple different values for the name data field '" .. name .. "'"
 				})
-				error("STOP_LINE_EXECUTION")
+				self:haltLine()
 			end
 		end
 		if value == nil then
@@ -116,17 +127,19 @@ function vm:evalExpr(ast)
 		elseif ast.operator == "/" then
 			if rightValue == 0 then
 				self:pushError({
+					level="error",
 					msg="Attempted division by zero."
 				})
-				error("STOP_LINE_EXECUTION")
+				self:haltLine()
 			end
 			return leftValue / rightValue
 		elseif ast.operator == "%" then
 			if rightValue == 0 then
 				self:pushError({
+					level="error",
 					msg="Attempted modulo by zero."
 				})
-				error("STOP_LINE_EXECUTION")
+				self:haltLine()
 			end
 			return leftValue % rightValue
 		elseif ast.operator == "+" then
@@ -197,7 +210,18 @@ function vm:executeStatement(ast)
 		self:st_assign(ast)
 	elseif ast.type == "goto" then
 		self:st_goto(ast)
+	elseif ast.type == "if" then
+		self:_if(ast)
 	elseif ast.type == "comment" then
+	elseif ast.type == "expression" then
+		if ast.expression == nil or (ast.expression.type ~= "pre_add" and ast.expression.type ~= "post_add") then
+			self:pushError({
+				level="warn",
+				msg="used expression"
+			})
+		else
+			self:evalExpr(ast.expression)
+		end
 	else
 		errorVM("unknown ast node type " .. ast.type)
 	end
@@ -214,9 +238,10 @@ function vm:st_goto(ast)
 	local ln = self:evalExpr(ast.expression)
 	if type(ln) ~= "number" then
 		self:pushError({
-			pos=ast.pos,
+			level="error",
 			msg="attempt to goto a invalid line, it was not a number."
 		})
+		self:haltLine()
 	else
 		if ln <= 0 then
 			ln = 1
@@ -224,6 +249,17 @@ function vm:st_goto(ast)
 			ln = 20
 		end
 		self.line = ln-1
+	end
+end
+
+function vm:_if(ast)
+	local value = self:evalExpr(ast.condition)
+	if value == 0 then
+		if ast.else_body ~= nil then
+			self:execCode(ast.else_body)
+		end
+	else
+		self:execCode(ast.body)
 	end
 end
 

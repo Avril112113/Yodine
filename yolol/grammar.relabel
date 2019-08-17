@@ -5,7 +5,7 @@ line	<- (block Sp (comment / %nl)) -> line
 statement	<- assign
 			 / goto
 			 / if
-			 / expression
+			 / expression -> expression_stmt
 block		<- (statement)*
 
 goto		<- Sp (GOTO Sp need_expression)
@@ -68,12 +68,12 @@ data_field_identifier	<- ':' [a-zA-Z0-9_]+
 
 comment	<- ({} '//' {(!%nl .)*} {} %nl) -> comment
 
-any_op		<- assign_op / pre_post_op / add_op / neg_op / neg_op / mul_op / exp_op / fac_op / neq_op / eq_op / named_op / AND / OR
+any_op		<- assign_op / pre_post_op / add_op / neg_op / mul_op / exp_op / fac_op / neq_op / eq_op / named_op / AND / OR
 assign_op	<- '=' / '+=' / '-=' / '*=' / '/=' / '%='
 named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN / NOT
 pre_post_op	<- '++' / '--'
 add_op		<- [+-]
-neg_op		<- '-'
+neg_op		<- '-' (&'--' / !'-')
 mul_op		<- [*/%]
 exp_op		<- '^'
 fac_op		<- '!'

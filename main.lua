@@ -24,8 +24,11 @@ LoadedMap:connect(testButton, testLED)
 LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
+lines[1] = "if 1 then a=1 else a=2 end"
+--[[
 lines[1] = "x1 = 1 y1 = ++x1"
 lines[2] = "x2 = 1 y2 = x2++"
+--]]
 --[[
 lines[1] = ":LEDState = 0.5 * 2"
 lines[3] = ":LEDState = 0 / 1"
