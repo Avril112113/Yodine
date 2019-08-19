@@ -15,40 +15,60 @@ local function pusherror(err)
 	table.insert(errors, err)
 end
 
---- All binary ops are the same format and work the same so this is a helper func
---- to convert the info given from parser into the AST
----@param _type string
----@param leftTree boolean @ Weather or not it constructs additional args '...' on the left side
----@param left table @ Is a Node of the AST
----@param operator string
---- @vararg table @ Is a Node of the AST (is not working with sumneko's vscode extention for lua)
-local function parseBinaryOpAST(_type, leftTree, left, operator, ...)
-	local t = {...}
-	if leftTree == true and #t > 1 then
-		local right = table.remove(t, #t)
-		local _operator = table.remove(t, #t)
-		return {
-			type=_type,
-			left=parseBinaryOpAST(_type, leftTree, left, operator, unpack(t)),
-			operator=_operator,
-			right=right
-		}
-	else
-		local right
-		if #t < 1 then
-			right = nil  -- NOTE: this error should be caught and put into errors list
-		elseif #t == 1 then
-			right = t[1]
-		elseif #t > 1 then
-			right = parseBinaryOpAST(_type, leftTree, unpack(t))
+
+local operatorData = {
+	-- ["OPERATOR"]={Precedence, RightAssoc, TypeName}
+	["^"]={7, true, "exp"},
+	["*"]={6, false, "mul"},
+	["/"]={6, false, "mul"},
+	["%"]={6, false, "mul"},
+	["+"]={5, false, "add"},
+	["-"]={5, false, "add"},
+	["<"]={4, false, "neq"},
+	[">"]={4, false, "neq"},
+	["<="]={4, false, "neq"},
+	[">="]={4, false, "neq"},
+	["!="]={3, false, "eq"},
+	["=="]={3, false, "eq"},
+	["or"]={2, false, "or"},
+	["and"]={1, true, "and"},
+}
+--- NOTE: only handles binary operators
+---@param data any @ YAST_Base
+---@param min_precedence number
+local function climbPrecedence(data, min_precedence)
+	local lhs = table.remove(data, 1)
+	while #data > 0 do
+		local lahead = data[1]
+		if type(lahead) ~= "string" then break end
+
+		local op = lahead:lower()
+		local opData = operatorData[op]
+		if opData == nil then
+			error("Invalid op, bad operator, was '" .. op .. "' but expected an operator in opPrecedence")
 		end
-		return {
-			type=_type,
-			left=left,
-			operator=operator,
-			right=right
+		if #opData ~= 3 then
+			error("Invalid opData, opData for '" .. op .. "' does not contain 3 values")
+		end
+
+		if opData[1] < min_precedence then
+			break
+		end
+
+		lahead = table.remove(data, 1)
+
+		local nextPrecedence = opData[1]
+		if not opData[2] then
+			nextPrecedence = nextPrecedence + 1
+		end
+		lhs = {
+			type=opData[3],
+			lhs=lhs,
+			operator=op,
+			rhs=climbPrecedence(data, nextPrecedence)
 		}
 	end
+	return lhs
 end
 
 ---@class YDEFS
@@ -134,11 +154,13 @@ local defs = {
 		}
 	end,
 	["if"]=function(ifBody, elseBody)
+		local elseBody_body
+		if elseBody ~= nil then elseBody_body = elseBody.body end
 		return {
 			type="if",
 			condition=ifBody.condition,
 			body=ifBody.body,
-			else_body=elseBody.body
+			else_body=elseBody_body
 		}
 	end,
 	if_body=function(condition, ...)
@@ -180,15 +202,6 @@ local defs = {
 			...  -- For debugging
 		}
 	end,
-	mul=function(...)
-		return parseBinaryOpAST("mul", false, ...)
-	end,
-	add=function(...)
-		return parseBinaryOpAST("add", false, ...)
-	end,
-	exp=function(...)
-		return parseBinaryOpAST("exp", false, ...)
-	end,
 	keyword=function(operator, operand)
 		return {
 			type="keyword",
@@ -202,18 +215,6 @@ local defs = {
 			operator=operator,
 			operand=operand
 		}
-	end,
-	["or"]=function(...)
-		return parseBinaryOpAST("or", true, ...)
-	end,
-	["and"]=function(...)
-		return parseBinaryOpAST("and", true, ...)
-	end,
-	neq=function(...)
-		return parseBinaryOpAST("eq", false, ...)
-	end,
-	eq=function(...)
-		return parseBinaryOpAST("neq", false, ...)
 	end,
 	fact=function(value, operator, ...)
 		local result = {
@@ -243,6 +244,9 @@ local defs = {
 			operator=operator,
 			operand=operand
 		}
+	end,
+	binary=function(...)
+		return climbPrecedence({...}, 1)
 	end,
 
 	string=function(str)

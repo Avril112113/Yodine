@@ -17,43 +17,24 @@ else_body	<- (ELSE Sp block) -> else_body
 
 assign		<- Sp (identifier Sp {assign_op} Sp need_expression) -> assign
 
-expression		<- value_nop / prec_11 -> expression
-need_expression	<- (value_nop / prec_11 / {} -> MISS_EXPR) -> expression
+expression		<- value_nop / prec_5 -> expression
+need_expression	<- (value_nop / prec_5 / {} -> MISS_EXPR) -> expression
 
 unary_pre	<- ({pre_post_op} Sp (value / {} -> MISS_EXPR)) -> pre_add
 unary_post	<- (value Sp {pre_post_op}) -> post_add
 prec_1		<- unary_post / unary_pre / value
 
-neg			<- ({neg_op} Sp (value_nop / prec_1 / {} -> MISS_EXPR)) -> neg
+neg			<- ({neg_op} Sp ((value_nop / prec_1) / {} -> MISS_EXPR)) -> neg
 prec_2		<- neg / prec_1
 
-fact		<- (!"!=" / &"!==") fac_op
-fact1		<- ((value_nop / prec_2) Sp {fact}+) -> fact
+fact1		<- ((value_nop / prec_2) Sp {fac_op}+) -> fact
 prec_3		<- fact1 / prec_2
 
 named		<- ({named_op} Sp (value_nop / prec_3 / {} -> MISS_EXPR)) -> keyword
 prec_4		<- named / prec_3
 
-exp			<- (((value_nop / prec_4) Sp {exp_op} Sp)+ (value_nop / prec_4 / {} -> MISS_EXPR)) -> exp
-prec_5		<- exp / prec_4
-
-mul			<- (((value_nop / prec_5) Sp {mul_op} Sp)+ (value_nop / prec_5 / {} -> MISS_EXPR)) -> mul
-prec_6		<- mul / prec_5
-
-add			<- (((value_nop / prec_6) Sp {add_op} Sp)+ (value_nop / prec_6 / {} -> MISS_EXPR)) -> add
-prec_7		<- add / prec_6
-
-neq			<- (((value_nop / prec_7) Sp {neq_op} Sp)+ (value_nop / prec_7 / {} -> MISS_EXPR)) -> neq
-prec_8		<- neq / prec_7
-
-eq			<- (((value_nop / prec_8) Sp {eq_op} Sp)+ (value_nop / prec_8 / {} -> MISS_EXPR)) -> eq
-prec_9		<- eq / prec_8
-
-or_expr		<- ((value_nop / prec_9) (Sp {OR} Sp (value_nop / prec_9 / {} -> MISS_EXPR))+) -> or
-prec_10		<- or_expr / prec_9
-
-and_expr	<- ((value_nop / prec_10) (Sp {AND} Sp (value_nop / prec_10 / {} -> MISS_EXPR))+) -> and
-prec_11		<- and_expr / prec_10
+binary		<- ((value_nop / prec_4) (Sp {exp_op / mul_op / add_op / neq_op / eq_op / OR / AND} Sp (value_nop / prec_4 / {} -> MISS_EXPR))+) -> binary
+prec_5		<- binary / prec_4
 
 value 	<- string
 		 / number
@@ -76,7 +57,7 @@ add_op		<- [+-]
 neg_op		<- '-' (&'--' / !'-')
 mul_op		<- [*/%]
 exp_op		<- '^'
-fac_op		<- '!'
+fac_op		<- (!"!=" / &"!==") '!'
 neq_op		<- [<>] '='?
 eq_op		<- [!=] '='
 

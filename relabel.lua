@@ -29,17 +29,28 @@ if version == "Lua 5.2" then _ENV = nil end
 local any = m.P(1)
 local dummy = mm.P(false)
 
+local track_depth = 0
 -- For Debugging
 local track_enter = function(n)
   return m.Cmt(m.P(true), function(subject, pos, ...)
-    print("enter at " .. tostring(pos) .. " : " .. tostring(n))
+    print(string.rep(" ", track_depth) .. "check match at " .. tostring(pos) .. " : " .. tostring(n))
+    track_depth = track_depth + 1
+    return true
+  end)
+end
+-- For Debugging
+local track_match = function(n)
+  return m.Cmt(m.P(true), function(subject, pos, ...)
+    track_depth = track_depth - 1
+    print(string.rep(" ", track_depth) .. "good match at " .. tostring(pos) .. " : " .. tostring(n))
     return true
   end)
 end
 -- For Debugging
 local track_leave = function(n)
   return m.Cmt(m.P(true), function(subject, pos, ...)
-    print("leave at " .. tostring(pos) .. " : " .. tostring(n))
+    track_depth = track_depth - 1
+    print(string.rep(" ", track_depth) .. "failed match at " .. tostring(pos) .. " : " .. tostring(n))
     return true
   end)
 end
@@ -221,16 +232,16 @@ end
 local function firstdef (n, r) return adddef({n}, n, r) end
 
 
-local function NT (n, b)
+local function NT (n, b, _special)
   if not b then
     error("rule '"..n.."' used outside a grammar")
   else
     -- For Debugging
-    --if (#n == 1 and #n:gsub("[A-Z]", "") == 0) or n == "Sp" then
+    if _special ~= false and debug.relabelDbgFilter ~= nil and debug.relabelDbgFilter(n) then
+      return track_enter(n) * mm.V(n) * track_match(n) + track_leave(n) * m.P(false)
+    else
       return mm.V(n)
-    --else
-    --  return track_enter(n) * mm.V(n) * track_leave(n)
-    --end
+    end
   end
 end
 

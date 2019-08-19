@@ -60,52 +60,54 @@ local function calc(ast)
 		return -calc(ast.operand)
 	-- Binary
 	elseif op == "+" then
-		return calc(ast.left) + calc(ast.right)
+		return calc(ast.lhs) + calc(ast.rhs)
 	elseif op == "-" then
-		return calc(ast.left) - calc(ast.right)
+		return calc(ast.lhs) - calc(ast.rhs)
 	elseif op == "*" then
-		return calc(ast.left) * calc(ast.right)
+		return calc(ast.lhs) * calc(ast.rhs)
 	elseif op == "/" then
-		return calc(ast.left) / calc(ast.right)
+		return calc(ast.lhs) / calc(ast.rhs)
 	elseif op == "^" then
-		return calc(ast.left) ^ calc(ast.right)
+		return calc(ast.lhs) ^ calc(ast.rhs)
+	elseif op == "%" then
+		return calc(ast.lhs) % calc(ast.rhs)
 	elseif op == "and" then
-		if calc(ast.left) ~= 0 and calc(ast.right) ~= 0 then
+		if calc(ast.lhs) ~= 0 and calc(ast.rhs) ~= 0 then
 			return 1
 		end
 		return 0
 	elseif op == "or" then
-		if calc(ast.left) ~= 0 or calc(ast.right) ~= 0 then
+		if calc(ast.lhs) ~= 0 or calc(ast.rhs) ~= 0 then
 			return 1
 		end
 		return 0
 	elseif op == "==" then
-		if calc(ast.left) == calc(ast.right) then
+		if calc(ast.lhs) == calc(ast.rhs) then
 			return 1
 		end
 		return 0
 	elseif op == "!=" then
-		if calc(ast.left) ~= calc(ast.right) then
+		if calc(ast.lhs) ~= calc(ast.rhs) then
 			return 1
 		end
 		return 0
 	elseif op == "<=" then
-		if calc(ast.left) <= calc(ast.right) then
+		if calc(ast.lhs) <= calc(ast.rhs) then
 			return 1
 		end
 		return 0
 	elseif op == ">=" then
-		if calc(ast.left) >= calc(ast.right) then
+		if calc(ast.lhs) >= calc(ast.rhs) then
 			return 1
 		end
 		return 0
 	elseif op == "<" then
-		if calc(ast.left) < calc(ast.right) then
+		if calc(ast.lhs) < calc(ast.rhs) then
 			return 1
 		end
 		return 0
 	elseif op == ">" then
-		if calc(ast.left) > calc(ast.right) then
+		if calc(ast.lhs) > calc(ast.rhs) then
 			return 1
 		end
 		return 0
@@ -164,6 +166,8 @@ local function printAST(ast, indent, depth, fieldName)
 			end
 			if hasPrintedStart then
 				print(string.rep(indent, depth+1) .. "]")
+			else
+				print(string.rep(indent, depth+1) .. strValueFromType(i) .. " = " .. strValueFromType(v))
 			end
 		elseif i ~= "type" then
 			print(string.rep(indent, depth+1) .. strValueFromType(i) .. " = " .. strValueFromType(v))

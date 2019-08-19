@@ -1,4 +1,4 @@
---[[TMP]] require "test"
+--[[TMP]] -- require "test"
 require "utils"  -- provides a set of global functions
 
 -- Constant's and defining locals
