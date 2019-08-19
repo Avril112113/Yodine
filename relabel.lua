@@ -29,6 +29,21 @@ if version == "Lua 5.2" then _ENV = nil end
 local any = m.P(1)
 local dummy = mm.P(false)
 
+-- For Debugging
+local track_enter = function(n)
+  return m.Cmt(m.P(true), function(subject, pos, ...)
+    print("enter at " .. tostring(pos) .. " : " .. tostring(n))
+    return true
+  end)
+end
+-- For Debugging
+local track_leave = function(n)
+  return m.Cmt(m.P(true), function(subject, pos, ...)
+    print("leave at " .. tostring(pos) .. " : " .. tostring(n))
+    return true
+  end)
+end
+
 
 local errinfo = {
   NoPatt = "no pattern found",
@@ -209,7 +224,13 @@ local function firstdef (n, r) return adddef({n}, n, r) end
 local function NT (n, b)
   if not b then
     error("rule '"..n.."' used outside a grammar")
-  else return mm.V(n)
+  else
+    -- For Debugging
+    --if (#n == 1 and #n:gsub("[A-Z]", "") == 0) or n == "Sp" then
+      return mm.V(n)
+    --else
+    --  return track_enter(n) * mm.V(n) * track_leave(n)
+    --end
   end
 end
 

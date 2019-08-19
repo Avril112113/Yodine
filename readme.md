@@ -1,3 +1,6 @@
+# Yodine
+Pronounced Yo-Dine ('Yo-d-eye-ne'?)
+
 # Github Repo Info
 This is put on github for help from others  
 but you may use it as you wish for your own projects.  
