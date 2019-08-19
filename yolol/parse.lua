@@ -1,3 +1,4 @@
+local lpl = require "lpeglabel"
 local re = require "relabel"
 
 local grammarPath = "yolol/grammar.relabel"
@@ -126,12 +127,6 @@ local defs = {
 	esc_t="\t",
 
 	-- AST Building
-	program=function(...)
-		return {
-			type="program",
-			lines={...}
-		}
-	end,
 	line=function(...)
 		return {
 			type="line",
@@ -279,30 +274,49 @@ local defs = {
 }
 local grammar = re.compile(grammarStr, defs)
 
+---@param lineCode string
+---@return YAST_Line,table
+local function parseLine(lineCode)
+	errors = {}
+
+	local startTime = os.time()
+	local line, errMsg, errPos = grammar:match(lineCode)
+	local endTime = os.time()
+	if line == nil then line = {type="line"} end
+	line.parseTime = endTime - startTime
+	line.errMsg = errMsg
+	line.errPos = errPos
+	line.errors = errors
+
+	errors = nil
+	return line
+end
+
+---@param codeStr string
+---@return ParseResult
+local function parse(codeStr)
+	local lines = {}
+	local program = {
+		type="program",
+		lines=lines
+	}
+
+	local startTime = os.time()
+	for lineStr in codeStr:gmatch("([^\n]*)\n?") do
+		table.insert(lines, parseLine(lineStr))
+	end
+	local endTime = os.time()
+
+	return {
+		---@type YAST_Program|nil
+		ast=program,
+		---@type number
+		totalParseTime=endTime - startTime
+	}
+end
+
 return {
 	defs=defs,
-	---@param codeStr string
-	---@return ParseResult
-	parse=function(codeStr)
-		errors = {}
-
-		local startTime = os.time()
-		local result, errMsg, errPos = grammar:match(codeStr)
-		local endTime = os.time()
-
-		local _errors = errors
-		errors = nil
-		return {
-			---@type YAST_Program|nil
-			ast=result,
-			---@type string|nil
-			errMsg=errMsg,
-			---@type number|nil
-			errPos=errPos,
-			---@type table
-			errors=_errors,
-			---@type number
-			parseTime=endTime - startTime
-		}
-	end
+	parse=parse,
+	parseLine=parseLine
 }

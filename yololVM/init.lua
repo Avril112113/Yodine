@@ -29,16 +29,16 @@ local vm = {
 }
 vm.__index = vm
 
----@param ast YAST_Program
 ---@param chip Device_Chip
-function vm.new(ast, chip)
+---@param initialLines string[]|nil
+function vm.new(chip, initialLines)
 	local self = setmetatable({
 		chip=chip,
-		ast=ast,
+		lines=initialLines or {},
 		errors={},
 
 		variables={},
-		line=0
+		line=1
 	}, vm)
 	return self
 end
@@ -78,12 +78,14 @@ end
 
 --- Runs all code in the next line
 function vm:step()
-	self.line = (self.line % #self.ast.lines) + 1
+	self.line = (self.line % #self.lines) + 1
 	---@type YAST_Line
-	local line = self.ast.lines[self.line]
+	local line = self.lines[self.line]
 	self.errors[self.line] = {}
 
-	self:execCode(line.code)
+	if #line.errors == 0 then  -- if no syntax errors
+		self:execCode(line.code)
+	end
 end
 
 function vm:evalExpr(ast)

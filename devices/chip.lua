@@ -23,9 +23,6 @@ local chip = {
 	column=0,
 
 	-- Other
-	---@type nil|YAST_Program
-	ast=nil,
-	--errors=nil -- no typing info right now :(
 	vmStepTimePass=0,
 	vmStepInterval=0.2
 }
@@ -57,20 +54,21 @@ function chip:checkColumn(moveLine)
 		end
 	end
 end
-function chip:codeChanged()
-	local codeStr = ""
-	for _, v in ipairs(self.lines) do
-		codeStr = codeStr .. v .. "\n"
+---@param ln number|nil
+function chip:codeChanged(ln)
+	if ln == nil then
+		for i=1,#self.lines do
+			self:codeChanged(i)
+		end
+	elseif self.lines[ln] == nil then
+		error("schip:codeChanged() on invalid line " .. tostring(ln))
+	else
+		self.vm.lines[ln] = yolol.parseLine(self.lines[ln])
 	end
-	self.codeStr = codeStr  -- cached for when we get error positions
-	local result = yolol.parse(codeStr)
-	self.ast = result.ast
-	self.errors = result.errors
-
-	self.vm = vm.new(self.ast, self)
 end
 
 function chip:init()
+	self.vm = vm.new(self)
 	self.lines = {}
 	for i=1,20 do
 		table.insert(self.lines, "")
@@ -83,9 +81,9 @@ function chip:draw(opened)
 	end
 
 	love.graphics.setFont(Consola)
+	local consolaCharWidth = GetFont():getWidth(" ")
 
 	for ln=1,#self.lines do
-		local lnStr = tostring(ln)
 		if ln%2 == 0 then
 			love.graphics.setColor(0, 0, 0.6)
 		else
@@ -98,7 +96,7 @@ function chip:draw(opened)
 
 	-- orange rectangle for current line
 	love.graphics.setColor(1, 0.49, 0, 0.6)
-	love.graphics.rectangle("fill", 24, self.lineHeight*self.vm.line, self.lineWidth, self.lineHeight)
+	love.graphics.rectangle("fill", 24, self.lineHeight*(self.vm.line-1), self.lineWidth, self.lineHeight)
 
 	for ln=1,#self.lines do
 		local lnStr = tostring(ln)
@@ -111,85 +109,56 @@ function chip:draw(opened)
 
 	-- cant really be seen when not opened as centre draw object (unless zoomed in?)
 	if opened == true then
-		love.graphics.setColor(0.7, 0, 0, 1)
-		for _, v in pairs(self.errors) do
-			local ln, col = re.calcline(self.codeStr, v.pos)
-			if self.codeStr:sub(v.pos, v.pos) == "\n" then
-				ln = ln - 1
-				col = #(self.codeStr:sub(v.pos, #self.codeStr):gsub("[^\n]\n", ""))
-			end
-			local errStr
-			if v.type == "SYNTAX_ERROR" then
-				errStr = self.lines[ln]:sub(col, #self.lines[ln])
-			else
-				errStr = self.lines[ln]:sub(col, col)
-			end
-			if #errStr <= 0 then errStr = " " end
-			local colStr = self.lines[ln]:sub(1, col-1)
-			love.graphics.rectangle("fill", 26+GetFont():getWidth(colStr), self.lineHeight*(ln-1)+2+(self.lineHeight/1.8), GetFont():getWidth(errStr), self.lineHeight/5)
+		local function drawErrorLine(ln, colStart, colEnd)
+			colStart = colStart - 1
+			love.graphics.rectangle("fill", 26+consolaCharWidth*colStart, self.lineHeight*(ln-1)+2+(self.lineHeight/1.8), consolaCharWidth*(colEnd-colStart), self.lineHeight/5)
 		end
-		for ln, errors in pairs(self.vm.errors) do
-			for _, v in pairs(errors) do
-				local col = v.pos or 1
-				local errStr
-				if v.type == "SYNTAX_ERROR" then
-					errStr = self.lines[ln]:sub(col, #self.lines[ln])
-				else
-					errStr = self.lines[ln]:sub(col, col)
-				end
-				if #errStr <= 0 then errStr = " " end
-				local colStr = self.lines[ln]:sub(1, col-1)
-				love.graphics.rectangle("fill", 26+GetFont():getWidth(colStr), self.lineHeight*(ln-1)+2+(self.lineHeight/1.8), GetFont():getWidth(errStr), self.lineHeight/5)
+		local function drawHoverPopup(ln, col, msg)
+			local x, y = 26+consolaCharWidth*col, self.lineHeight*(ln-1)+2+(self.lineHeight/1.8)
+			local w, h = GetFont():getWidth(msg), GetFont():getHeight()
+			love.graphics.setColor(0.3, 0.3, 0.3, 1)
+			love.graphics.rectangle("fill", x+18, y+self.lineHeight, w*1.2+4, h)
+			love.graphics.setColor(1, 1, 1, 1)
+			love.graphics.print(msg, x+20, y+self.lineHeight, 0, 1.2, 1.2)
+		end
+
+		love.graphics.setColor(0.7, 0, 0, 1)
+		for i, line in pairs(self.vm.lines) do
+			for _, err in pairs(line.errors) do
+				local pos = err.pos or #self.lines[i]
+				drawErrorLine(i, pos, pos)
+			end
+		end
+		for i, errors in pairs(self.vm.errors) do
+			for _, err in pairs(errors) do
+				local pos = err.pos or #self.lines[i]
+				drawErrorLine(i, pos, pos)
 			end
 		end
 		if AtTimeInterval(1, 0.5) then
 			love.graphics.setColor(1, 1, 1, 1)
-			local charStr = self.lines[self.line]:sub(self.column, self.column)
-			if #charStr <= 0 then charStr = " " end
-			local colStr = self.lines[self.line]:sub(1, self.column)
-			love.graphics.rectangle("fill", 26+GetFont():getWidth(colStr), self.lineHeight*(self.line-1)+2+(self.lineHeight/3), GetFont():getWidth(charStr), self.lineHeight/4)
+			love.graphics.rectangle("fill", 26+consolaCharWidth*self.column, self.lineHeight*(self.line-1)+2+(self.lineHeight/3), consolaCharWidth, self.lineHeight/4)
 		end
 		local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
-		for _, v in pairs(self.errors) do
-			local ln, col = re.calcline(self.codeStr, v.pos)
-			if self.codeStr:sub(v.pos, v.pos) == "\n" then
-				ln = ln - 1
-				col = #(self.codeStr:sub(v.pos, #self.codeStr):gsub("[^\n]\n", ""))
-			end
-			local errStr
-			if v.type == "SYNTAX_ERROR" then
-				errStr = self.lines[ln]:sub(col, #self.lines[ln])
-			else
-				errStr = self.lines[ln]:sub(col, col)
-			end
-			if #errStr <= 0 then errStr = " " end
-			local colStr = self.lines[ln]:sub(1, col-1)
-			local x, y, w, h = 26+GetFont():getWidth(colStr), self.lineHeight*(ln-1)+2, GetFont():getWidth(v.msg), GetFont():getHeight()
-			if IsInside(x, y, x+GetFont():getWidth(errStr), y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
-				love.graphics.setColor(0.3, 0.3, 0.3, 1)
-				love.graphics.rectangle("fill", x+18, y+self.lineHeight, w*1.2, h-2)
-				love.graphics.setColor(1, 1, 1, 1)
-				love.graphics.print(v.msg, x+18, y+self.lineHeight, 0, 1.2, 1.2)
+		for i, line in pairs(self.vm.lines) do
+			for _, err in pairs(line.errors) do
+				local pos = (err.pos or #self.lines[i]) - 1
+				local x, y = 26+consolaCharWidth*pos, self.lineHeight*(i-1)+2
+				local w, h = consolaCharWidth*1, GetFont():getHeight()
+				print(x, y, x+w, y+h)
+				if IsInside(x, y, x+w, y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
+					drawHoverPopup(i, pos, err.msg)
+				end
 			end
 		end
-		for ln, errors in pairs(self.vm.errors) do
-			for _, v in pairs(errors) do
-				local col = v.pos or 1
-				local errStr
-				if v.type == "SYNTAX_ERROR" then
-					errStr = self.lines[ln]:sub(col, #self.lines[ln])
-				else
-					errStr = self.lines[ln]:sub(col, col)
-				end
-				if #errStr <= 0 then errStr = " " end
-				local colStr = self.lines[ln]:sub(1, col-1)
-				local x, y, w, h = 26+GetFont():getWidth(colStr), self.lineHeight*(ln-1)+2, GetFont():getWidth(v.msg), GetFont():getHeight()
-				if IsInside(x, y, x+GetFont():getWidth(errStr), y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
-					love.graphics.setColor(0.3, 0.3, 0.3, 1)
-					love.graphics.rectangle("fill", x+18, y+self.lineHeight, w*1.2, h)
-					love.graphics.setColor(1, 1, 1, 1)
-					love.graphics.print(v.msg, x+18, y+self.lineHeight, 0, 1.2, 1.2)
-					break
+		for i, errors in pairs(self.vm.errors) do
+			for _, err in pairs(errors) do
+				local pos = (err.pos or #self.lines[i]) - 1
+				local x, y = 26+consolaCharWidth*pos, self.lineHeight*(i-1)+2
+				local w, h = consolaCharWidth*1, GetFont():getHeight()
+				print(x, y, x+w, y+h)
+				if IsInside(x, y, x+w, y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
+					drawHoverPopup(i, pos, err.msg)
 				end
 			end
 		end
@@ -200,7 +169,16 @@ function chip:draw(opened)
 	love.graphics.setColor(0.4, 0.4, 0.7, 1)
 	love.graphics.rectangle("fill", self.lineWidth, 0, self.rightPanelWidth, self.lineHeight*#self.lines)
 
-	if #self.errors > 0 then
+	local drawErrorBorder = false
+	for i, v in pairs(self.vm.errors) do
+		if #v > 0 then drawErrorBorder = true break end
+	end
+	if not drawErrorBorder then
+		for i, line in pairs(self.vm.lines) do
+			if #line.errors > 0 then drawErrorBorder = true break end
+		end
+	end
+	if drawErrorBorder then
 		local dw, dh = self:getSizeGUI()
 		love.graphics.setColor(0.5, 0, 0, 1)
 		if opened ~= true then
@@ -258,7 +236,7 @@ function chip:keypressedGUI(key)
 			self.column = self.column - 1
 			self:checkColumn(false)
 		end
-		self:codeChanged()
+		self:codeChanged(self.line)
 	elseif key == "delete" then
 		local lineStr = self.lines[self.line]
 		local rightStr = lineStr:sub(self.column+1, #lineStr)
@@ -266,13 +244,13 @@ function chip:keypressedGUI(key)
 			self.lines[self.line] = lineStr:sub(1, self.column) .. rightStr:sub(2, #rightStr)
 			self:checkColumn(false)
 		end
-		self:codeChanged()
+		self:codeChanged(self.line)
 	end
 end
 function chip:textinputGUI(text)
 	self.lines[self.line] = self.lines[self.line]:sub(1, self.column) .. text .. self.lines[self.line]:sub(self.column+1, #self.lines[self.line])
 	self.column = self.column + #text
-	self:codeChanged()
+	self:codeChanged(self.line)
 end
 
 function chip:update(dt)
@@ -280,11 +258,7 @@ function chip:update(dt)
 
 	if self.vmStepTimePass >= self.vmStepInterval then
 		self.vmStepTimePass = self.vmStepTimePass%self.vmStepInterval
-		if #self.errors > 0 then
-			print("Skipping step, chip code contains errors.")
-		else
-			self.vm:step()
-		end
+		self.vm:step()
 	end
 end
 

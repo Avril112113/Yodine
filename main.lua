@@ -1,6 +1,7 @@
 --[[TMP]] -- require "test"
 require "utils"  -- provides a set of global functions
 
+--[ =[
 -- Constant's and defining locals
 BackgroundCellSize = 20
 local background
@@ -204,3 +205,4 @@ end
 function love.resize()
 	genBackgroundImage()
 end
+--]=]
