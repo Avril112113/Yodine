@@ -10,7 +10,7 @@ end
 --]]
 
 local re = require "relabel"
-local yolol = require "yolol.init"
+local yolol = require "yolol"
 
 local input = [[
 x++ y++

@@ -6,12 +6,12 @@ require "utils"  -- provides a set of global functions
 BackgroundCellSize = 20
 local background
 DefaultFont = GetFont()
-Consola = love.graphics.newFont("Consola.ttf")
+Consola = love.graphics.newFont("fonts/Consola.ttf")
 
-local yolol = require "yolol.init"
+local yolol = require "yolol"
 
 local camera = require "camera"
-local devices = require "devices.init"
+local devices = require "devices"
 local Map = require "Map"
 
 

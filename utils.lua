@@ -1,3 +1,9 @@
+-- Helpful functions, shorthands ect
+-- also sets up some basic things
+package.path = package.path .. ";libs/?.lua;libs/?/init.lua"
+package.cpath = package.cpath .. ";libs/?.dll"
+
+
 local images = {}
 function GetImage(path)
 	if images[path] ~= nil then
