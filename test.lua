@@ -11,10 +11,9 @@ end
 
 local re = require "relabel"
 local yolol = require "yolol.init"
-local helpers = require "yolol.tests.helpers"
 
 local input = [[
-a=1 ++b
+x++ y++
 ]]
 local result = yolol.parse(input)
 
@@ -46,22 +45,22 @@ if result ~= nil then
 	print()
 	print("Parsed data.")
 	print("AST")
-	helpers.printAST(result.ast, "   |")
+	yolol.helpers.printAST(result.ast, "   |")
 	print()
 	print("Checking and calculating any statment expression's.")
 	for i, line in pairs(result.ast.lines) do
 		if line.code ~= nil and #line.code == 1 then
 			local v = line.code[1]
 			if type(v) == "table" and v.type == "expression" then
-				local ok, calcResult = pcall(helpers.calc, v.expression)
+				local ok, calcResult = pcall(yolol.helpers.calc, v.expression)
 				if not ok then
 					calcResult = calcResult:gsub(".*:%d+:", ""):gsub("^ *", "")
 				end
-				print("Calc ln " .. helpers.strValueFromType(i) .. ":", tostring(calcResult))
+				print("Calc ln " .. yolol.helpers.strValueFromType(i) .. ":", tostring(calcResult))
 			end
 		end
 	end
-	-- print(); print(helpers.serializeTable(result.ast))
+	-- print(); print(yolol.helpers.serializeTable(result.ast))
 else
 	print("No parsed data.")
 end

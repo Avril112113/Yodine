@@ -8,7 +8,7 @@ local background
 DefaultFont = GetFont()
 Consola = love.graphics.newFont("Consola.ttf")
 
-local helpers = require "yolol.tests.helpers"
+local yolol = require "yolol.init"
 
 local camera = require "camera"
 local devices = require "devices.init"
@@ -26,32 +26,13 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-x=a---b+c
-y=a++-b+c-d+e
 
-z=(b-x)
-
-w=a + (b - x) * 2 / 3
-
-l = 99999^9999
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end
 for i=1,#test_data_lines do
 	lines[i] = test_data_lines[i]
 end
---[[
-lines[1] = "x1 = 1 y1 = ++x1"
-lines[2] = "x2 = 1 y2 = x2++"
---]]
---[[
-lines[1] = ":LEDState = 0.5 * 2"
-lines[3] = ":LEDState = 0 / 1"
-lines[5] = ":LEDState = 1 ^ 1"
-lines[9] = ":LEDState = 0"
-lines[10] = ":LEDState = 0 / 0"
-lines[12] = "goto 1"
---]]
 testChip:codeChanged()
 
 -- Variables
@@ -205,7 +186,7 @@ function love.keypressed(key)
 		SetCenterDrawObject()
 	elseif CenterDrawObject == nil and key == "space" then
 		for i, v in pairs(testChip.vm.variables) do
-			print(i, helpers.strValueFromType(v))
+			print(i, yolol.helpers.strValueFromType(v))
 		end
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
