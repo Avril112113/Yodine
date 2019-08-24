@@ -4,7 +4,7 @@ line	<- (block Sp comment? %nl?) -> line
 statement	<- assign
 			 / goto
 			 / if
-			 / Sp expression -> expression_stmt
+			 / Sp ({} expression) -> FLOATING_EXPR
 block		<- (statement)*
 
 goto		<- Sp (GOTO Sp need_expression)
@@ -60,7 +60,7 @@ fac_op		<- (!"!=" / &"!==") '!'
 neq_op		<- [<>] '='?
 eq_op		<- [!=] '='
 
-string	<- '"' ([!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\^_`abcdefghijklmnopqrstuvwxyz{|}]/'['/']')*->string '"'
+string	<- '"' (" "/"!"/[#-~])*->string '"'
 number	<- ('-'? digit+ ('.' digit+)?) -> number
 
 digit	<- [0-9]

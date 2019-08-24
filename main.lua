@@ -25,7 +25,15 @@ LoadedMap:connect(testButton, testLED)
 LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
-lines[1] = "if 1 then a=1 else a=2 end"
+local test_data = [[
+a=5 b=3 c=0
+if a%2!=b%2 then c+1 end c*2 a/=2 b/=2 if a+b>0 then goto 2 end
+]]
+local test_data_lines = {}
+for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end
+for i=1,#test_data_lines do
+	lines[i] = test_data_lines[i]
+end
 --[[
 lines[1] = "x1 = 1 y1 = ++x1"
 lines[2] = "x2 = 1 y2 = x2++"
@@ -80,6 +88,8 @@ function love.load()
 	camera.y = -love.graphics.getHeight()/2
 
 	love.filesystem.write("/Help.txt", love.filesystem.read("/data/_Help.txt"))
+
+	love.keyboard.setKeyRepeat(true)
 end
 
 function love.draw()

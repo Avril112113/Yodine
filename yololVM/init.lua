@@ -61,16 +61,36 @@ function vm:setVariableFromName(name, value)
 		self.variables[name] = value
 	end
 end
+---@param name string
+function vm:getVariableFromName(name)
+	if name:sub(1, 1) == ":" then
+		LoadedMap:getField(self.chip, name:sub(2, #name))
+	else
+		return self.variables[name] or 0
+	end
+end
 
+local function execCode_errHandler(err)
+	if err:sub(#err-18, #err) == "STOP_LINE_EXECUTION" then
+		return false
+	else
+		print("CRITIAL VM ERROR:")
+		print(debug.traceback(err))
+		return true
+	end
+end
 function vm:execCode(code)
 	for _, v in ipairs(code) do
 		-- i think empty lines cause empty string to be in line.code ???
 		if type(v) ~= "string" then
-			local ok, result = pcall(function() self:executeStatement(v) end)
-			if not ok and result:sub(#result-18, #result) == "STOP_LINE_EXECUTION" then
+			local ok, result = xpcall(function()
+				self:executeStatement(v)
+			end, execCode_errHandler)
+			if not ok and result then
+				self:pushError({
+					msg="CRITIAL VM ERROR"
+				})
 				break
-			elseif not ok then
-				error(result)  -- when i wish we could handle errors like in python
 			end
 		end
 	end
@@ -78,7 +98,6 @@ end
 
 --- Runs all code in the next line
 function vm:step()
-	self.line = (self.line % #self.lines) + 1
 	---@type YAST_Line
 	local line = self.lines[self.line]
 	self.errors[self.line] = {}
@@ -86,6 +105,7 @@ function vm:step()
 	if #line.errors == 0 then  -- if no syntax errors
 		self:execCode(line.code)
 	end
+	self.line = (self.line % #self.lines) + 1
 end
 
 function vm:evalExpr(ast)
@@ -119,9 +139,9 @@ function vm:evalExpr(ast)
 		end
 		return value
 	-- General binary math handling
-	elseif ast.type == "exp" or ast.type == "mul" or ast.type == "add" then
-		local leftValue = self:evalExpr(ast.left)
-		local rightValue = self:evalExpr(ast.right)
+	elseif ast.type == "exp" or ast.type == "mul" or ast.type == "add" or ast.type == "eq" or ast.type == "neq" then
+		local leftValue = self:evalExpr(ast.lhs)
+		local rightValue = self:evalExpr(ast.rhs)
 		if ast.operator == "^" then
 			return leftValue ^ rightValue
 		elseif ast.operator == "*" then
@@ -145,9 +165,49 @@ function vm:evalExpr(ast)
 			end
 			return leftValue % rightValue
 		elseif ast.operator == "+" then
-			return leftValue + rightValue
+			if type(leftValue) == "string" or type(leftValue) == "string" then
+				return tostring(leftValue) .. tostring(leftValue)
+			else
+				return leftValue + leftValue
+			end
 		elseif ast.operator == "-" then
 			return leftValue - rightValue
+		elseif ast.operator == "==" then
+			if leftValue == rightValue then
+				return 1
+			else
+				return 0
+			end
+		elseif ast.operator == "!=" then
+			if leftValue ~= rightValue then
+				return 1
+			else
+				return 0
+			end
+		elseif ast.operator == ">" then
+			if leftValue > rightValue then
+				return 1
+			else
+				return 0
+			end
+		elseif ast.operator == ">=" then
+			if leftValue >= rightValue then
+				return 1
+			else
+				return 0
+			end
+		elseif ast.operator == "<" then
+			if leftValue > rightValue then
+				return 1
+			else
+				return 0
+			end
+		elseif ast.operator == "<=" then
+			if leftValue <= rightValue then
+				return 1
+			else
+				return 0
+			end
 		else
 			errorVM("invalid operator " .. ast.operator .. " from " .. ast.type .. " type for binary math handling in eval.")
 		end
@@ -215,24 +275,59 @@ function vm:executeStatement(ast)
 	elseif ast.type == "if" then
 		self:_if(ast)
 	elseif ast.type == "comment" then
+	--[[
 	elseif ast.type == "expression" then
 		if ast.expression == nil or (ast.expression.type ~= "pre_add" and ast.expression.type ~= "post_add") then
 			self:pushError({
 				level="warn",
-				msg="used expression"
+				msg="unused expression"
 			})
 		else
 			self:evalExpr(ast.expression)
 		end
+	--]]
 	else
 		errorVM("unknown ast node type " .. ast.type)
 	end
 end
 
 function vm:st_assign(ast)
-	if ast.operator ~= "=" then errorVM("assign operator " .. tostring(ast.operator) .. " is not supported yet.") end
 	local name = ast.identifier.name
 	local value = self:evalExpr(ast.value)
+	if not ast.operator == "=" then
+		local oldValue = self:getVariableFromName(name)
+		if ast.operator == "+=" then
+			if type(oldValue) == "string" or type(value) == "string" then
+				value = tostring(oldValue) .. tostring(value)
+			else
+				value = oldValue + value
+			end
+		elseif ast.operator == "-=" then
+			value = oldValue - value
+		elseif ast.operator == "*=" then
+			value = oldValue * value
+		elseif ast.operator == "/=" then
+			if value == 0 then
+				self:pushError({
+					level="error",
+					msg="Attempted division by zero."
+				})
+				self:haltLine()
+			end
+			value = oldValue / value
+		elseif ast.operator == "%=" then
+			if value == 0 then
+				self:pushError({
+					level="error",
+					msg="Attempted modulo by zero."
+				})
+				self:haltLine()
+			end
+			value = oldValue % value
+		else
+			errorVM("assign operator " .. tostring(ast.operator) .. " is not supported yet.")
+		end
+	end
 	self:setVariableFromName(name, value)
 end
 

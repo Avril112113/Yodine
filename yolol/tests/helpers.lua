@@ -44,6 +44,11 @@ local function tblPrint(a, b, path)
 	end
 end
 
+local function isEmptyTable(tbl)
+	for i, v in ipairs(tbl) do return false end
+	return true
+end
+
 --- Very simple, calculates the result of the given AST if its valid
 ---@param ast table @ Is a Node of the AST
 local function calc(ast)
@@ -166,6 +171,8 @@ local function printAST(ast, indent, depth, fieldName)
 			end
 			if hasPrintedStart then
 				print(string.rep(indent, depth+1) .. "]")
+			elseif isEmptyTable(v) then
+				print(string.rep(indent, depth+1) .. strValueFromType(i) .. " = " .. strValueFromType(v) .. "(Empty Table)")
 			else
 				print(string.rep(indent, depth+1) .. strValueFromType(i) .. " = " .. strValueFromType(v))
 			end

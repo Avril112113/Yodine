@@ -109,11 +109,17 @@ function chip:draw(opened)
 
 	-- cant really be seen when not opened as centre draw object (unless zoomed in?)
 	if opened == true then
-		local function drawErrorLine(ln, colStart, colEnd)
+		local function drawErrorLine(ln, colStart, colEnd, level)
 			colStart = colStart - 1
+			if level == "warn" then
+				love.graphics.setColor(1, 0.9, 0, 1)
+			else  -- "error" or default
+				love.graphics.setColor(0.7, 0, 0, 1)
+			end
 			love.graphics.rectangle("fill", 26+consolaCharWidth*colStart, self.lineHeight*(ln-1)+2+(self.lineHeight/1.8), consolaCharWidth*(colEnd-colStart), self.lineHeight/5)
 		end
 		local function drawHoverPopup(ln, col, msg)
+			if col <= 0 then return end
 			local x, y = 26+consolaCharWidth*col, self.lineHeight*(ln-1)+2+(self.lineHeight/1.8)
 			local w, h = GetFont():getWidth(msg), GetFont():getHeight()
 			love.graphics.setColor(0.3, 0.3, 0.3, 1)
@@ -122,17 +128,16 @@ function chip:draw(opened)
 			love.graphics.print(msg, x+20, y+self.lineHeight, 0, 1.2, 1.2)
 		end
 
-		love.graphics.setColor(0.7, 0, 0, 1)
 		for i, line in pairs(self.vm.lines) do
 			for _, err in pairs(line.errors) do
 				local pos = err.pos or #self.lines[i]
-				drawErrorLine(i, pos, pos)
+				drawErrorLine(i, pos, pos, "error")
 			end
 		end
 		for i, errors in pairs(self.vm.errors) do
 			for _, err in pairs(errors) do
 				local pos = err.pos or #self.lines[i]
-				drawErrorLine(i, pos, pos)
+				drawErrorLine(i, pos, pos, err.level)
 			end
 		end
 		if AtTimeInterval(1, 0.5) then
@@ -145,7 +150,6 @@ function chip:draw(opened)
 				local pos = (err.pos or #self.lines[i]) - 1
 				local x, y = 26+consolaCharWidth*pos, self.lineHeight*(i-1)+2
 				local w, h = consolaCharWidth*1, GetFont():getHeight()
-				print(x, y, x+w, y+h)
 				if IsInside(x, y, x+w, y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
 					drawHoverPopup(i, pos, err.msg)
 				end
@@ -156,7 +160,6 @@ function chip:draw(opened)
 				local pos = (err.pos or #self.lines[i]) - 1
 				local x, y = 26+consolaCharWidth*pos, self.lineHeight*(i-1)+2
 				local w, h = consolaCharWidth*1, GetFont():getHeight()
-				print(x, y, x+w, y+h)
 				if IsInside(x, y, x+w, y+h, love.mouse.getX()-cdo_x, love.mouse.getY()-cdo_y) then
 					drawHoverPopup(i, pos, err.msg)
 				end

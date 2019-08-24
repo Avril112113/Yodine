@@ -1,6 +1,12 @@
 local lpl = require "lpeglabel"
 local re = require "relabel"
 
+local didYouMean = {
+	arcsin="asin",
+	arccos="acos",
+	arctan="atan"
+}
+
 local grammarPath = "yolol/grammar.relabel"
 local grammarFile = io.open(grammarPath, "r")
 local grammarStr = grammarFile:read("*a")
@@ -114,6 +120,13 @@ local defs = {
 			msg="Syntax Error: Missing 'end' keyword."
 		}
 	end,
+	FLOATING_EXPR=function(pos)
+		pusherror {
+			type="FLOATING_EXPR",
+			pos=pos,
+			msg="Syntax Error: Floating exprestion is not allowed."
+		}
+	end,
 	SYNTAX_ERROR=function(pos, remaining, finish)
 		pusherror {
 			type="SYNTAX_ERROR",
@@ -173,12 +186,14 @@ local defs = {
 			body={...}
 		}
 	end,
+	--[[
 	expression_stmt=function(expression)
 		return {
 			type="expression",
 			expression=expression
 		}
 	end,
+	--]]
 
 	expression=function(...)
 		local exprs = {...}
