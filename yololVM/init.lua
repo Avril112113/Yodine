@@ -275,19 +275,10 @@ function vm:executeStatement(ast)
 	elseif ast.type == "if" then
 		self:_if(ast)
 	elseif ast.type == "comment" then
-	--[[
-	elseif ast.type == "expression" then
-		if ast.expression == nil or (ast.expression.type ~= "pre_add" and ast.expression.type ~= "post_add") then
-			self:pushError({
-				level="warn",
-				msg="unused expression"
-			})
-		else
-			self:evalExpr(ast.expression)
-		end
-	--]]
+	elseif ast.type == "pre_add" or ast.type == "post_add" then
+		self:evalExpr(ast)
 	else
-		errorVM("unknown ast node type " .. ast.type)
+		errorVM("unknown ast type for statement " .. ast.type)
 	end
 end
 

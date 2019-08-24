@@ -14,11 +14,7 @@ local yolol = require "yolol.init"
 local helpers = require "yolol.tests.helpers"
 
 local input = [[
-:asd = abs -5 :y251a = arcsin 0.5 :ha01 = ""
-test = "hello world times!"
-
-ta = 1 + "a"
-tb = "b" + 2
+a=1 ++b
 ]]
 local result = yolol.parse(input)
 

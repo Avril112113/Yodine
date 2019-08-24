@@ -26,8 +26,14 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-a=5 b=3 c=0
-if a%2!=b%2 then c+1 end c*2 a/=2 b/=2 if a+b>0 then goto 2 end
+x=a---b+c
+y=a++-b+c-d+e
+
+z=(b-x)
+
+w=a + (b - x) * 2 / 3
+
+l = 99999^9999
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end

@@ -4,6 +4,7 @@ line	<- (block Sp comment? %nl?) -> line
 statement	<- assign
 			 / goto
 			 / if
+			 / Sp unary_post / Sp unary_pre
 			 / Sp ({} expression) -> FLOATING_EXPR
 block		<- (statement)*
 
@@ -20,7 +21,7 @@ expression		<- value_nop / prec_5 -> expression
 need_expression	<- (value_nop / prec_5 / {} -> MISS_EXPR) -> expression
 
 unary_pre	<- ({pre_post_op} Sp (value / {} -> MISS_EXPR)) -> pre_add
-unary_post	<- (value Sp {pre_post_op}) -> post_add
+unary_post	<- (value Sp {pre_post_op} &Sp !value) -> post_add
 prec_1		<- unary_post / unary_pre / value
 
 neg			<- ({neg_op} Sp ((value_nop / prec_1) / {} -> MISS_EXPR)) -> neg
@@ -52,7 +53,7 @@ any_op		<- assign_op / pre_post_op / add_op / neg_op / mul_op / exp_op / fac_op 
 assign_op	<- '=' / '+=' / '-=' / '*=' / '/=' / '%='
 named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN / NOT
 pre_post_op	<- '++' / '--'
-add_op		<- [+-]
+add_op		<- !pre_post_op [+-]
 neg_op		<- '-' (&'--' / !'-')
 mul_op		<- [*/%]
 exp_op		<- '^'
