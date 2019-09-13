@@ -1,12 +1,6 @@
 local lpl = require "lpeglabel"
 local re = require "relabel"
 
-local didYouMean = {
-	arcsin="asin",
-	arccos="acos",
-	arctan="atan"
-}
-
 local grammarPath = "yolol/grammar.relabel"
 local grammarFile = io.open(grammarPath, "r")
 local grammarStr = grammarFile:read("*a")

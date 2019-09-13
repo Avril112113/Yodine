@@ -26,7 +26,8 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-
+a="12345678"
+a += a goto 2
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end

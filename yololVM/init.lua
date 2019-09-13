@@ -71,7 +71,7 @@ function vm:getVariableFromName(name)
 end
 
 local function execCode_errHandler(err)
-	if err:sub(#err-18, #err) == "STOP_LINE_EXECUTION" then
+	if type(err) == "string" and err:sub(#err-18, #err) == "STOP_LINE_EXECUTION" then
 		return false
 	else
 		print("CRITIAL VM ERROR:")
@@ -86,10 +86,21 @@ function vm:execCode(code)
 			local ok, result = xpcall(function()
 				self:executeStatement(v)
 			end, execCode_errHandler)
-			if not ok and result then
-				self:pushError({
-					msg="CRITIAL VM ERROR"
-				})
+			if not ok then
+				if result == "not enough memory" then
+					self:pushError({
+						msg="Ran out of Memory"
+					})
+				-- known case where running out of memory can mess stuff up
+				elseif result == execCode_errHandler then
+					self:pushError({
+						msg="Might have ran out of Memory"
+					})
+				else
+					self:pushError({
+						msg="CRITIAL VM ERROR"
+					})
+				end
 				break
 			end
 		end
@@ -261,6 +272,9 @@ function vm:evalExpr(ast)
 		else
 			return value
 		end
+	elseif ast.type == "neg" then
+		local value = self:evalExpr(ast.operand)
+		return -value
 	else
 		errorVM("invalid type " .. ast.type .. " for an eval, expected a valid expresstion type")
 	end
@@ -285,7 +299,7 @@ end
 function vm:st_assign(ast)
 	local name = ast.identifier.name
 	local value = self:evalExpr(ast.value)
-	if not ast.operator == "=" then
+	if ast.operator ~= "=" then
 		local oldValue = self:getVariableFromName(name)
 		if ast.operator == "+=" then
 			if type(oldValue) == "string" or type(value) == "string" then
