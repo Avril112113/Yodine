@@ -25,7 +25,9 @@ local vm = {
 	---@type table<string,string|number>
 	variables=nil,
 	---@type number
-	line=nil
+	line=nil,
+
+	MAX_STR_LENGTH=524288  -- this is quite large O_o
 }
 vm.__index = vm
 
@@ -178,7 +180,15 @@ function vm:evalExpr(ast)
 			return leftValue % rightValue
 		elseif operator == "+" then
 			if type(leftValue) == "string" or type(leftValue) == "string" then
-				return tostring(leftValue) .. tostring(leftValue)
+				local str = tostring(leftValue) .. tostring(leftValue)
+				if #str > self.MAX_STR_LENGTH then
+					self:pushError({
+						level="warn",
+						msg="Max string length reached, string was trimmed."
+					})
+					return str:sub(1, self.MAX_STR_LENGTH)
+				end
+				return str
 			else
 				return leftValue + leftValue
 			end
@@ -315,6 +325,13 @@ function vm:st_assign(ast)
 		if ast.operator == "+=" then
 			if type(oldValue) == "string" or type(value) == "string" then
 				value = tostring(oldValue) .. tostring(value)
+				if #value > self.MAX_STR_LENGTH then
+					self:pushError({
+						level="warn",
+						msg="Max string length reached, string was trimmed."
+					})
+					return value:sub(1, self.MAX_STR_LENGTH)
+				end
 			else
 				value = oldValue + value
 			end

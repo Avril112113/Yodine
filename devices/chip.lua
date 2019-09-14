@@ -3,6 +3,24 @@ local yolol = require "yolol"
 local vm = require "yololVM"
 local deviceValidation = require "devices._deviceValidation"
 
+local function errorLevelToNumber(level)
+	if type(level) == "number" then
+		return level
+	end
+	if level == "warn" then
+		return 2
+	end
+	return 1
+end
+local function errorLevelColor(level)
+	level = errorLevelToNumber(level)
+	if level == 2 then
+		return 1, 0.9, 0, 1
+	else
+		return 0.7, 0, 0, 1
+	end
+end
+
 ---@class Device_Chip
 local chip = {
 	name="Chip",
@@ -111,11 +129,7 @@ function chip:draw(opened)
 	if opened == true then
 		local function drawErrorLine(ln, colStart, colEnd, level)
 			colStart = colStart - 1
-			if level == "warn" then
-				love.graphics.setColor(1, 0.9, 0, 1)
-			else  -- "error" or default
-				love.graphics.setColor(0.7, 0, 0, 1)
-			end
+			love.graphics.setColor(errorLevelColor(level))
 			love.graphics.rectangle("fill", 26+consolaCharWidth*colStart, self.lineHeight*(ln-1)+2+(self.lineHeight/1.8), consolaCharWidth*(colEnd-colStart), self.lineHeight/5)
 		end
 		local function drawHoverPopup(ln, col, msg)
@@ -129,7 +143,7 @@ function chip:draw(opened)
 		end
 
 		for i, line in pairs(self.vm.lines) do
-			for _, err in pairs(line.errors) do
+			for _, err in pairs(line.metadata.errors) do
 				local pos = err.pos or #self.lines[i]
 				drawErrorLine(i, pos, pos, "error")
 			end
@@ -146,7 +160,7 @@ function chip:draw(opened)
 		end
 		local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
 		for i, line in pairs(self.vm.lines) do
-			for _, err in pairs(line.errors) do
+			for _, err in pairs(line.metadata.errors) do
 				local pos = (err.pos or #self.lines[i]) - 1
 				local x, y = 26+consolaCharWidth*pos, self.lineHeight*(i-1)+2
 				local w, h = consolaCharWidth*1, GetFont():getHeight()
@@ -172,18 +186,29 @@ function chip:draw(opened)
 	love.graphics.setColor(0.4, 0.4, 0.7, 1)
 	love.graphics.rectangle("fill", self.lineWidth, 0, self.rightPanelWidth, self.lineHeight*#self.lines)
 
-	local drawErrorBorder = false
-	for i, v in pairs(self.vm.errors) do
-		if #v > 0 then drawErrorBorder = true break end
-	end
-	if not drawErrorBorder then
-		for i, line in pairs(self.vm.lines) do
-			if #line.errors > 0 then drawErrorBorder = true break end
+	local errorBorderLevel = 99
+	for i, line in pairs(self.vm.lines) do
+		for _, err in pairs(line.metadata.errors) do
+			local errNum = errorLevelToNumber(err.level)
+				print(errNum, err.level)
+			if errNum < errorBorderLevel then
+				errorBorderLevel = errNum
+			end
 		end
 	end
-	if drawErrorBorder then
+	for i, errors in pairs(self.vm.errors) do
+		for _, err in pairs(errors) do
+			local errNum = errorLevelToNumber(err.level)
+				print(errNum, err.level)
+			if errNum < errorBorderLevel then
+				errorBorderLevel = errNum
+			end
+		end
+	end
+	print("--- ", errorBorderLevel)
+	if errorBorderLevel < 99 then
 		local dw, dh = self:getSizeGUI()
-		love.graphics.setColor(0.5, 0, 0, 1)
+		love.graphics.setColor(errorLevelColor(errorBorderLevel))
 		if opened ~= true then
 			love.graphics.setLineWidth(15)
 		end
