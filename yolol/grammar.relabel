@@ -1,4 +1,4 @@
-line	<- (block Sp comment? %nl?) -> line
+line	<- (block Sp comment?? %nl?) -> line
 			(!. / ({} {.*} {}) -> SYNTAX_ERROR)
 
 statement	<- assign
@@ -6,14 +6,14 @@ statement	<- assign
 			 / if
 			 / Sp unary_post / Sp unary_pre
 			 / Sp ({} expression) -> FLOATING_EXPR
-block		<- (statement)*
+block		<- (statement)* -> _code
 
 goto		<- Sp (GOTO Sp need_expression)
 				-> goto
 
 if			<- Sp (if_body Sp else_body? Sp need_end) -> if
 if_body		<- (IF Sp need_expression Sp need_then block) -> if_body
-else_body	<- (ELSE Sp block) -> else_body
+else_body	<- ELSE Sp block
 
 assign		<- Sp (identifier Sp {assign_op} Sp need_expression) -> assign
 

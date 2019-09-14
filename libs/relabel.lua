@@ -1,5 +1,6 @@
 -- Copied from https://github.com/sqmedeiros/lpeglabel/blob/master/relabel.lua
--- for offline development
+-- modified for ability to get a full trace
+-- added `??` for optional explisit nil capture, basically `CaptureSomething??` if CaptureSomething fails, returns nil to the function during ast build
 
 -- $Id: re.lua $
 
@@ -256,6 +257,7 @@ local exp = m.P{ "Exp",
   Suffix = m.Cf(m.V"Primary" *
           ( S * ( m.P"+" * m.Cc(1, mt.__pow)
                 + m.P"*" * m.Cc(0, mt.__pow)
+                + m.P"??" * m.Cc(nil, function(patt) return patt + m.Cc(nil) end)
                 + m.P"?" * m.Cc(-1, mt.__pow)
                 + "^" * expect( m.Cg(num * m.Cc(mult))
                               + m.Cg(m.C(m.S"+-" * m.R"09"^1) * m.Cc(mt.__pow)

@@ -11,23 +11,18 @@ end
 
 local re = require "relabel"
 local yolol = require "yolol"
+local yololVM = require "yololVM"
 
 local input = [[
-x++ y++
 ]]
 local result = yolol.parse(input)
 
-print("Took " .. tostring(result.parseTime) .. "s odd to parse.")
+print("Took " .. tostring(result.totalParseTime) .. "s odd to parse.")
 
-if result.errPos ~= nil then
-	local ln, col = re.calcline(input, result.errPos)
-	print("Failed at " .. tostring(ln) .. ":" .. tostring(col) .. " with")
-	print(yolol.defs[result.errMsg])
-end
 print()
 local errors = {}
-for i, line in ipairs(result.ast.lines) do
-	for _, err in ipairs(line.errors) do
+for i, line in ipairs(result.program.lines) do
+	for _, err in ipairs(line.metadata.errors) do
 		table.insert(errors, err)
 	end
 end
@@ -42,13 +37,12 @@ else
 end
 print()
 if result ~= nil then
-	print()
 	print("Parsed data.")
 	print("AST")
-	yolol.helpers.printAST(result.ast, "   |")
+	yolol.helpers.printAST(result.program, "   |")
 	print()
 	print("Checking and calculating any statment expression's.")
-	for i, line in pairs(result.ast.lines) do
+	for i, line in pairs(result.program.lines) do
 		if line.code ~= nil and #line.code == 1 then
 			local v = line.code[1]
 			if type(v) == "table" and v.type == "expression" then
@@ -64,3 +58,15 @@ if result ~= nil then
 else
 	print("No parsed data.")
 end
+
+local vm = yololVM.new(nil, result.program.lines)
+
+print("Running in VM (external variables will raise errors)")
+for i=1,20*10 do
+	io.write(".")
+	vm:step()
+end
+io.write("\n")
+
+print("Exit.")
+os.exit()

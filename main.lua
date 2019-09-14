@@ -1,4 +1,7 @@
---[[TMP]] -- require "test"
+package.path = package.path .. ";libs/?.lua;libs/?/init.lua"
+package.cpath = package.cpath .. ";libs/?.dll"
+
+--[[TMP]]  -- require "test"
 require "utils"  -- provides a set of global functions
 
 --[ =[
@@ -52,6 +55,14 @@ function SetCenterDrawObject(obj)
 			error("Attempt to set center draw object but does not have :getSizeGUI()")
 		end
 		CenterDrawObject = obj
+	end
+end
+function GetCenterDrawObjectPositionData()
+	if CenterDrawObject ~= nil and CenterDrawObject.getSizeGUI ~= nil then
+		local ww, wh = love.graphics.getWidth(), love.graphics.getHeight()
+		local cdo_w, cdo_h = CenterDrawObject:getSizeGUI()
+		local cdo_x, cdo_y = (ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2)
+		return cdo_x, cdo_y, cdo_w, cdo_h
 	end
 end
 

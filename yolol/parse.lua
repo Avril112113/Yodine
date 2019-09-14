@@ -63,7 +63,7 @@ local function climbPrecedence(data, min_precedence)
 			nextPrecedence = nextPrecedence + 1
 		end
 		lhs = {
-			type=opData[3],
+			type="expression::binary_op", -- "::" .. opData[3],
 			lhs=lhs,
 			operator=op,
 			rhs=climbPrecedence(data, nextPrecedence)
@@ -134,50 +134,49 @@ local defs = {
 	esc_t="\t",
 
 	-- AST Building
-	line=function(...)
+	line=function(code, comment)
 		return {
 			type="line",
-			code={...}
+			code=code,
+			comment=comment and comment.value,
+			metadata={
+				type="metadata",  -- for 2 reasons, so printAST will print this data, and incase we use pairs we can easily filter it out
+				comment_start=comment and comment.start,
+				comment_finish=comment and comment.finish,
+			}
 		}
+	end,
+	_code=function(...)
+		return {...}
 	end,
 
-	assign=function(identifier, operator, value)
-		return {
-			type="assign",
-			identifier=identifier,
-			operator=operator,
-			value=value
-		}
-	end,
 	["goto"]=function(expression)
 		return {
-			type="goto",
+			type="statement::goto",
 			expression=expression
 		}
 	end,
-	["if"]=function(ifBody, elseBody)
-		local elseBody_body
-		if elseBody ~= nil then elseBody_body = elseBody.body end
+	["if"]=function(if_body, else_body)
 		return {
-			type="if",
-			condition=ifBody.condition,
-			body=ifBody.body,
-			else_body=elseBody_body
+			type="statement::if",
+			condition=if_body.condition,
+			body=if_body.body,
+			else_body=else_body
 		}
 	end,
-	if_body=function(condition, ...)
+	if_body=function(condition, code)
 		-- gets used only by `if`, not in the resulting AST
 		return {
-			type="if_body",
 			condition=condition,
-			body={...}
+			body=code
 		}
 	end,
-	else_body=function(...)
-		-- gets used only by `if`, not in the resulting AST
+	assign=function(identifier, operator, value)
 		return {
-			type="else_body",
-			body={...}
+			type="statement::assignment",
+			identifier=identifier,
+			operator=operator,
+			value=value
 		}
 	end,
 	--[[
@@ -208,21 +207,21 @@ local defs = {
 	end,
 	keyword=function(operator, operand)
 		return {
-			type="keyword",
+			type="expression::unary_op", -- "expression::unary_op::keyword",
 			operator=operator,
 			operand=operand
 		}
 	end,
 	neg=function(operator, operand)
 		return {
-			type="neg",
+			type="expression::unary_op", -- "expression::unary_op::neg",
 			operator=operator,
 			operand=operand
 		}
 	end,
 	fact=function(value, operator, ...)
 		local result = {
-			type="fact",
+			type="expression::unary_op", -- "expression::unary_op::fact",
 			operator=operator,
 			operand=value
 		}
@@ -237,14 +236,16 @@ local defs = {
 	end,
 	pre_add=function(operator, operand)
 		return {
-			type="pre_add",
+			type="expression::unary_op", -- "expression::unary_op::pre_add",
+			prpo="pre",
 			operator=operator,
 			operand=operand
 		}
 	end,
 	post_add=function(operand, operator)
 		return {
-			type="post_add",
+			type="expression::unary_op", -- "post_add",
+			prpo="post",
 			operator=operator,
 			operand=operand
 		}
@@ -253,28 +254,28 @@ local defs = {
 		return climbPrecedence({...}, 1)
 	end,
 
-	string=function(str)
-		return {
-			type="string",
-			str=str
-		}
-	end,
 	number=function(num)
 		return {
-			type="number",
+			type="expression::number",
 			num=num
+		}
+	end,
+	string=function(str)
+		return {
+			type="expression::string",
+			str=str
 		}
 	end,
 	identifier=function(name)
 		return {
-			type="identifier",
+			type="expression::identifier",
 			name=name
 		}
 	end,
 
 	comment=function(start, value, finish)
+		-- not in the resulting AST
 		return {
-			type="comment",
 			start=start,
 			finish=finish,
 			value=value
@@ -292,10 +293,12 @@ local function parseLine(lineCode)
 	local line, errMsg, errPos = grammar:match(lineCode)
 	local endTime = os.time()
 	if line == nil then line = {type="line"} end
-	line.parseTime = endTime - startTime
-	line.errMsg = errMsg
-	line.errPos = errPos
-	line.errors = errors
+	local meta = {}
+	line.metadata = meta
+	meta.parseTime = endTime - startTime
+	meta.errMsg = errMsg
+	meta.errPos = errPos
+	meta.errors = errors
 
 	errors = nil
 	return line
@@ -317,8 +320,9 @@ local function parse(codeStr)
 	local endTime = os.time()
 
 	return {
+		version="0.3.0",  -- cylon ast version
 		---@type YAST_Program|nil
-		ast=program,
+		program=program,
 		---@type number
 		totalParseTime=endTime - startTime
 	}

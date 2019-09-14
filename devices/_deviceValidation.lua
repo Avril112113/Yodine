@@ -1,4 +1,5 @@
 -- Contains data validators and some functions to simplfy things
+-- and some typing info
 
 -- Typing
 ---@class Field
@@ -43,7 +44,7 @@ local function validateDevice(device)
 	elseif type(device.fields) ~= "table" then
 		error(device.name .. " is missing a 'fields' field of the type table.")
 	end
-	for i,v in pairs(device.fields) do
+	for i, v in pairs(device.fields) do
 		validateField(v, i, device.name)
 	end
 end
@@ -52,7 +53,7 @@ return {
 	validateDevice=validateDevice,
 	validateField=validateField,
 
-	-- used for simplification
+	-- used for simplification, save's writing same code for different stuff
 	changed_anyNumber=function(self, newValue)
 		if type(newValue) ~= "number" then
 			error(self.name .. " expected a number but got " .. type(newValue) .. " instead.")

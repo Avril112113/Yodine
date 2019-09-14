@@ -113,18 +113,18 @@ function vm:step()
 	local line = self.lines[self.line]
 	self.errors[self.line] = {}
 
-	if #line.errors == 0 then  -- if no syntax errors
+	if #line.metadata.errors == 0 then  -- if no syntax errors
 		self:execCode(line.code)
 	end
 	self.line = (self.line % #self.lines) + 1
 end
 
 function vm:evalExpr(ast)
-	if ast.type == "number" then
+	if ast.type == "expression::number" then
 		return tonumber(ast.num)
-	elseif ast.type == "string" then
+	elseif ast.type == "expression::string" then
 		return ast.str
-	elseif ast.type == "identifier" then
+	elseif ast.type == "expression::identifier" then
 		local name = ast.name
 		local external = false
 		if name:sub(1, 1) == ":" then
@@ -150,14 +150,15 @@ function vm:evalExpr(ast)
 		end
 		return value
 	-- General binary math handling
-	elseif ast.type == "exp" or ast.type == "mul" or ast.type == "add" or ast.type == "eq" or ast.type == "neq" then
+	elseif ast.type == "expression::binary_op" then
+		local operator = ast.operator:lower()
 		local leftValue = self:evalExpr(ast.lhs)
 		local rightValue = self:evalExpr(ast.rhs)
-		if ast.operator == "^" then
+		if operator == "^" then
 			return leftValue ^ rightValue
-		elseif ast.operator == "*" then
+		elseif operator == "*" then
 			return leftValue * rightValue
-		elseif ast.operator == "/" then
+		elseif operator == "/" then
 			if rightValue == 0 then
 				self:pushError({
 					level="error",
@@ -166,7 +167,7 @@ function vm:evalExpr(ast)
 				self:haltLine()
 			end
 			return leftValue / rightValue
-		elseif ast.operator == "%" then
+		elseif operator == "%" then
 			if rightValue == 0 then
 				self:pushError({
 					level="error",
@@ -175,106 +176,117 @@ function vm:evalExpr(ast)
 				self:haltLine()
 			end
 			return leftValue % rightValue
-		elseif ast.operator == "+" then
+		elseif operator == "+" then
 			if type(leftValue) == "string" or type(leftValue) == "string" then
 				return tostring(leftValue) .. tostring(leftValue)
 			else
 				return leftValue + leftValue
 			end
-		elseif ast.operator == "-" then
+		elseif operator == "-" then
 			return leftValue - rightValue
-		elseif ast.operator == "==" then
+		elseif operator == "==" then
 			if leftValue == rightValue then
 				return 1
 			else
 				return 0
 			end
-		elseif ast.operator == "!=" then
+		elseif operator == "!=" then
 			if leftValue ~= rightValue then
 				return 1
 			else
 				return 0
 			end
-		elseif ast.operator == ">" then
+		elseif operator == ">" then
 			if leftValue > rightValue then
 				return 1
 			else
 				return 0
 			end
-		elseif ast.operator == ">=" then
+		elseif operator == ">=" then
 			if leftValue >= rightValue then
 				return 1
 			else
 				return 0
 			end
-		elseif ast.operator == "<" then
+		elseif operator == "<" then
 			if leftValue > rightValue then
 				return 1
 			else
 				return 0
 			end
-		elseif ast.operator == "<=" then
+		elseif operator == "<=" then
 			if leftValue <= rightValue then
 				return 1
 			else
 				return 0
 			end
+		elseif operator == "and" then
+			if leftValue == 1 and rightValue == 1 then
+				return 1
+			else
+				return 0
+			end
+		elseif operator == "or" then
+			if leftValue == 1 or rightValue == 1 then
+				return 1
+			else
+				return 0
+			end
 		else
-			errorVM("invalid operator " .. ast.operator .. " from " .. ast.type .. " type for binary math handling in eval.")
+			errorVM("invalid operator " .. ast.operator .. " for binary math handling in eval.")
 		end
-	elseif ast.type == "keyword" then
-		local keyword = ast.operator:lower()
+	elseif ast.type == "expression::unary_op" then
+		local operator = ast.operator:lower()
 		local value = self:evalExpr(ast.operand)
-		if keyword == "not" then
+		if operator == "not" then
 			if value == 0 then
 				return 1
 			else
 				return 0
 			end
-		elseif keyword == "abs" then
+		elseif operator == "abs" then
 			return math.abs(value)
-		elseif keyword == "cos" then
+		elseif operator == "cos" then
 			return math.cos(value)
-		elseif keyword == "sin" then
+		elseif operator == "sin" then
 			return math.sin(value)
-		elseif keyword == "tan" then
+		elseif operator == "tan" then
 			return math.tan(value)
-		elseif keyword == "acos" then
+		elseif operator == "acos" then
 			return math.acos(value)
-		elseif keyword == "asin" then
+		elseif operator == "asin" then
 			return math.asin(value)
-		elseif keyword == "atan" then
+		elseif operator == "atan" then
 			return math.atan(value)
-		elseif keyword == "sqrt" then
+		elseif operator == "sqrt" then
 			return math.sqrt(value)
+		elseif operator == "-" then
+			local value = self:evalExpr(ast.operand)
+			return -value
+		elseif operator == "++" or operator == "--" then
+			local identifier
+			if ast.operand ~= nil and ast.operand.type == "identifier" then
+				identifier = ast.operand.name
+			end
+			local newValue
+			if ast.operator == "++" then
+				newValue = value + 1
+			elseif ast.operator == "--" then
+				newValue = value - 1
+			else
+				errorVM("invalid operator " .. ast.operator .. " for unary_add handling in eval, expected a valid operator")
+			end
+			if identifier ~= nil then
+				self:setVariableFromName(identifier, newValue)
+			end
+			if ast.prpo == "pre" then
+				return newValue
+			else
+				return value
+			end
 		else
 			errorVM("invalid keyword " .. ast.operator .. " for keyword handling in eval, expected a valid keyword")
 		end
-	elseif ast.type == "pre_add" or ast.type == "post_add" then
-		local identifier
-		if ast.operand ~= nil and ast.operand.type == "identifier" then
-			identifier = ast.operand.name
-		end
-		local value = self:evalExpr(ast.operand)
-		local newValue
-		if ast.operator == "++" then
-			newValue = value + 1
-		elseif ast.operator == "--" then
-			newValue = value - 1
-		else
-			errorVM("invalid operator " .. ast.operator .. " for unary_add handling in eval, expected a valid operator")
-		end
-		if identifier ~= nil then
-			self:setVariableFromName(identifier, newValue)
-		end
-		if ast.type == "pre_add" then
-			return newValue
-		else
-			return value
-		end
-	elseif ast.type == "neg" then
-		local value = self:evalExpr(ast.operand)
-		return -value
 	else
 		errorVM("invalid type " .. ast.type .. " for an eval, expected a valid expresstion type")
 	end
@@ -282,14 +294,13 @@ end
 
 ---@param ast table @ YAST_Expression
 function vm:executeStatement(ast)
-	if ast.type == "assign" then
+	if ast.type == "statement::assignment" then
 		self:st_assign(ast)
-	elseif ast.type == "goto" then
+	elseif ast.type == "statement::goto" then
 		self:st_goto(ast)
-	elseif ast.type == "if" then
+	elseif ast.type == "statement::if" then
 		self:_if(ast)
-	elseif ast.type == "comment" then
-	elseif ast.type == "pre_add" or ast.type == "post_add" then
+	elseif ast.type == "expression::unary_op" and ast.prpo ~= nil then
 		self:evalExpr(ast)
 	else
 		errorVM("unknown ast type for statement " .. ast.type)

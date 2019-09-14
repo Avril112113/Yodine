@@ -1,7 +1,4 @@
 -- Helpful functions, shorthands ect
--- also sets up some basic things
-package.path = package.path .. ";libs/?.lua;libs/?/init.lua"
-package.cpath = package.cpath .. ";libs/?.dll"
 
 
 local images = {}
@@ -36,12 +33,3 @@ function AtTimeInterval(s, sm)
 end
 
 GetFont = love.graphics.getFont
-
-function GetCenterDrawObjectPositionData()
-	if CenterDrawObject ~= nil and CenterDrawObject.getSizeGUI ~= nil then
-		local ww, wh = love.graphics.getWidth(), love.graphics.getHeight()
-		local cdo_w, cdo_h = CenterDrawObject:getSizeGUI()
-		local cdo_x, cdo_y = (ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2)
-		return cdo_x, cdo_y, cdo_w, cdo_h
-	end
-end
