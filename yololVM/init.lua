@@ -66,7 +66,7 @@ end
 ---@param name string
 function vm:getVariableFromName(name)
 	if name:sub(1, 1) == ":" then
-		LoadedMap:getField(self.chip, name:sub(2, #name))
+		return LoadedMap:getField(self.chip, name:sub(2, #name))
 	else
 		return self.variables[name] or 0
 	end

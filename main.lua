@@ -7,9 +7,11 @@ require "utils"  -- provides a set of global functions
 --[ =[
 -- Constant's and defining locals
 BackgroundCellSize = 20
-local background
 DefaultFont = GetFont()
 Consola = love.graphics.newFont("fonts/Consola.ttf")
+
+local background
+local selectedDevice
 
 local yolol = require "yolol"
 
@@ -29,8 +31,7 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-a="12345678"
-a += a goto 2
+:ChipWait = -1
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end
@@ -38,6 +39,9 @@ for i=1,#test_data_lines do
 	lines[i] = test_data_lines[i]
 end
 testChip:codeChanged()
+
+local testMem = LoadedMap:createObject(100, 0, devices.memory_chip)
+LoadedMap:connect(testMem, testChip)
 
 -- Variables
 local connectionTarget
@@ -55,6 +59,7 @@ function SetCenterDrawObject(obj)
 			error("Attempt to set center draw object but does not have :getSizeGUI()")
 		end
 		CenterDrawObject = obj
+		selectedDevice = nil
 	end
 end
 function GetCenterDrawObjectPositionData()
@@ -86,7 +91,7 @@ function love.load()
 	camera.x = -love.graphics.getWidth()/2
 	camera.y = -love.graphics.getHeight()/2
 
-	love.filesystem.write("/Help.txt", love.filesystem.read("/data/_Help.txt"))
+	love.filesystem.write("/Help.txt", love.filesystem.read("/data/Help.txt"))
 
 	love.keyboard.setKeyRepeat(true)
 end
@@ -141,10 +146,43 @@ function love.draw()
 		love.graphics.pop()
 	end
 
+	if selectedDevice ~= nil then
+		local x, y = 10, 10
+		local w = 280
+		local wmp = w-(x*2)
+		love.graphics.setColor(0.3, 0.3, 0.3, 0.8)
+		love.graphics.rectangle("fill", 0, 0, w, wh)
+		love.graphics.setColor(1, 1, 1, 1)
+		love.graphics.printf(selectedDevice.name, x, y, wmp, "center")
+		y = y + GetFont():getHeight()
+		love.graphics.printf(selectedDevice.desc, x, y, wmp, "left")
+		y = y + GetFont():getHeight() + 10
+		love.graphics.print("Fields", x, y)
+		y = y + GetFont():getHeight()
+		for i, v in pairs(selectedDevice.fields) do
+			-- TODO: use `v.sort` to order the field
+			-- TODO: make all values aligned to each other
+			local nameStr = v.name .. ":  "
+			love.graphics.print(nameStr, x+10, y)
+			local valueStr
+			if type(v.value) == "string" then
+				valueStr = "\"" .. v.value .. "\""
+			else
+				valueStr = tostring(v.value)
+			end
+			local nameStrW = GetFont():getWidth(nameStr)
+			local px = x+10+nameStrW
+			love.graphics.printf(valueStr, px, y, (px-x)-10)
+			y = y + GetFont():getHeight()
+		end
+	end
+
+	local fpsStr = "FPS: " .. tostring(love.timer.getFPS())
+	local fpsXOff = ww - GetFont():getWidth(fpsStr)
 	love.graphics.setColor(0, 0, 0, 1)
-	love.graphics.print(love.timer.getFPS(), 1, 1)
+	love.graphics.print(fpsStr, fpsXOff+1, 1)
 	love.graphics.setColor(1, 1, 1, 1)
-	love.graphics.print(love.timer.getFPS())
+	love.graphics.print(fpsStr, fpsXOff)
 end
 
 function love.update(dt)
@@ -168,8 +206,8 @@ function love.mousereleased(x, y, button)
 		has_cdo = true
 		cdo_mx, cdo_my = x-cdo_x, y-cdo_y
 	end
+	local obj = LoadedMap:getObjectAt(worldX, worldY)
 	if button == 3 then
-		local obj = LoadedMap:getObjectAt(worldX, worldY)
 		if connectionTarget ~= nil and obj ~= nil then
 			if LoadedMap:isConnected(obj, connectionTarget) then
 				LoadedMap:disconnect(obj, connectionTarget)
@@ -177,18 +215,25 @@ function love.mousereleased(x, y, button)
 				LoadedMap:connect(obj, connectionTarget)
 			end
 			connectionTarget = nil
-		else
-			connectionTarget = obj
 		end
-	elseif has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
-		CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
+		return
+	elseif button == 2 then
+		if not (has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y)) then
+			selectedDevice = obj
+		end
 	elseif button == 1 then
-		local obj = LoadedMap:getObjectAt(worldX, worldY)
-		if obj then
+		if has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
+			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
+			selectedDevice = nil
+			return
+		elseif obj then
 			if obj.clicked then
+				selectedDevice = obj
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
 				return
 			end
+		else
+			selectedDevice = obj
 		end
 	end
 end

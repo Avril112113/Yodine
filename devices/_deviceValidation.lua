@@ -41,6 +41,7 @@ local function validateDevice(device)
 		error("<NO_NAME> is missing a 'name' field of the type string.")
 	elseif type(device.desc) ~= "string" then
 		print(device.name .. " is missing a 'desc' field of the type string.")
+		device.desc = "No Description."
 	elseif type(device.fields) ~= "table" then
 		error(device.name .. " is missing a 'fields' field of the type table.")
 	end

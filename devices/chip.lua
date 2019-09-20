@@ -21,11 +21,31 @@ local function errorLevelColor(level)
 	end
 end
 
+local ChipWait = {
+	name="ChipWait",
+	default=0,
+	desc="Controls script execution. Negative values mean execution is paused, zero means script is being executed, and positive values mean execution will continue after the amount of line runs have passed that are equal to the value.",
+	---@type Device_Button
+	parent=nil,
+	---@type number
+	value=nil
+}
+---@param newValue string|number
+---@return string|number
+function ChipWait:changed(newValue)
+	if type(newValue) == "number" then
+		return newValue
+	end
+	return self.default
+end
+
 ---@class Device_Chip
 local chip = {
 	name="Chip",
 	desc="TODO",
-	fields={},
+	fields={
+		chipWait=ChipWait
+	},
 
 	-- Drawing
 	lineWidth=(GetFont():getHeight()+4)*40,
@@ -112,8 +132,14 @@ function chip:draw(opened)
 		love.graphics.rectangle("fill", 0, self.lineHeight*(ln-1), 24, self.lineHeight)
 	end
 
-	-- orange rectangle for current line
-	love.graphics.setColor(1, 0.49, 0, 0.6)
+	-- rectangle for current line
+	if self.fields.chipWait.value > 0 then
+		love.graphics.setColor(1, 0.49, 0, 0.6)
+	elseif self.fields.chipWait.value < 0 then
+		love.graphics.setColor(0.75, 0.2, 0, 0.6)
+	else
+		love.graphics.setColor(0.49, 0.8, 0, 0.6)
+	end
 	love.graphics.rectangle("fill", 24, self.lineHeight*(self.vm.line-1), self.lineWidth, self.lineHeight)
 
 	for ln=1,#self.lines do
@@ -183,14 +209,34 @@ function chip:draw(opened)
 
 	love.graphics.setFont(DefaultFont)
 
+	-- Right border
 	love.graphics.setColor(0.4, 0.4, 0.7, 1)
 	love.graphics.rectangle("fill", self.lineWidth, 0, self.rightPanelWidth, self.lineHeight*#self.lines)
+	-- Pause button
+	local pauseButtonY = (self.lineHeight*#self.lines)-self.rightPanelWidth
+	if self.fields.chipWait.value < 0 then
+		love.graphics.setColor(0.59, 0, 0, 1)
+		love.graphics.rectangle("fill", self.lineWidth, pauseButtonY, self.rightPanelWidth, self.rightPanelWidth)
+		love.graphics.setColor(1, 1, 1, 1)
+		local tw = self.rightPanelWidth
+		local thw = tw/2
+		local tfw = tw/6
+		love.graphics.rectangle("fill", self.lineWidth+tfw, pauseButtonY+tfw, tfw, tw-(tfw*2))
+		love.graphics.rectangle("fill", self.lineWidth+tw-(tfw*2), pauseButtonY+tfw, tfw, tw-(tfw*2))
+	else
+		love.graphics.setColor(0, 0.59, 0, 1)
+		love.graphics.rectangle("fill", self.lineWidth, pauseButtonY, self.rightPanelWidth, self.rightPanelWidth)
+		love.graphics.setColor(1, 1, 1, 1)
+		local tw = self.rightPanelWidth
+		local thw = tw/2
+		local tqw = tw/4
+		triangle("fill", self.lineWidth+tqw, pauseButtonY+tqw, tw-thw, tw-thw)
+	end
 
 	local errorBorderLevel = 99
 	for i, line in pairs(self.vm.lines) do
 		for _, err in pairs(line.metadata.errors) do
 			local errNum = errorLevelToNumber(err.level)
-				print(errNum, err.level)
 			if errNum < errorBorderLevel then
 				errorBorderLevel = errNum
 			end
@@ -199,13 +245,11 @@ function chip:draw(opened)
 	for i, errors in pairs(self.vm.errors) do
 		for _, err in pairs(errors) do
 			local errNum = errorLevelToNumber(err.level)
-				print(errNum, err.level)
 			if errNum < errorBorderLevel then
 				errorBorderLevel = errNum
 			end
 		end
 	end
-	print("--- ", errorBorderLevel)
 	if errorBorderLevel < 99 then
 		local dw, dh = self:getSizeGUI()
 		love.graphics.setColor(errorLevelColor(errorBorderLevel))
@@ -242,6 +286,15 @@ function chip:clickedGUI(x, y, button)
 			self.column = math.floor((x-26)/Consola:getWidth(" "))
 			self:checkColumn(false)
 			return
+		end
+	end
+	local pauseButtonY = (self.lineHeight*#self.lines)-self.rightPanelWidth
+	local px, py, pw, ph = self.lineWidth, pauseButtonY, self.rightPanelWidth, self.rightPanelWidth
+	if IsInside(px, py, px+pw, py+ph, x, y) then
+		if self.fields.chipWait.value < 0 then
+			self.fields.chipWait.value = 0
+		else
+			self.fields.chipWait.value = -1
 		end
 	end
 end
@@ -284,7 +337,14 @@ end
 function chip:update(dt)
 	self.vmStepTimePass = self.vmStepTimePass + dt
 
-	if self.vmStepTimePass >= self.vmStepInterval then
+	if self.fields.chipWait.value > 0 then
+		if self.vmStepTimePass >= self.vmStepInterval then
+			self.vmStepTimePass = self.vmStepTimePass%self.vmStepInterval
+			self.fields.chipWait.value = self.fields.chipWait.value - 1
+		end
+	elseif self.fields.chipWait.value < 0 then
+		self.vmStepTimePass = self.vmStepTimePass%self.vmStepInterval
+	elseif self.vmStepTimePass >= self.vmStepInterval then
 		self.vmStepTimePass = self.vmStepTimePass%self.vmStepInterval
 		self.vm:step()
 	end

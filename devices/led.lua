@@ -4,7 +4,7 @@ local deviceValidation = require "devices._deviceValidation"
 local LEDState = {
 	name="LEDState",
 	default=0,
-	desc="Wheather its on or off",
+	desc="Its either on or off, its a light...",
 	---@type Device_Button
 	parent=nil,
 	---@type number

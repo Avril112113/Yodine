@@ -2,5 +2,6 @@
 return {
 	chip=require "devices.chip",
 	button=require "devices.button",
-	led=require "devices.led"
+	led=require "devices.led",
+	memory_chip=require "devices.memory_chip"
 }

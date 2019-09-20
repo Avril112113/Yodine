@@ -70,13 +70,10 @@ local button = {
 	}
 }
 
-function button:init()
-	self.state = 0
-end
 function button:draw()
 	-- everything is already transformed, just draw as 0, 0 was top-left
 	local btnImg
-	if self.state == 0 then
+	if self.fields.buttonState.value == 0 then
 		btnImg = GetImage("imgs/button.png")
 	else
 		btnImg = GetImage("imgs/button_on.png")
@@ -93,7 +90,7 @@ function button:getWireDrawOffset()
 end
 function button:clicked(x, y, button)
 	-- x, y is relitive to the position of the object and is never greater than :getSize()
-	self.state = self.state == 1 and 0 or 1
+	self.fields.buttonState.value = self.fields.buttonState.value == 1 and 0 or 1
 end
 
 deviceValidation.validateDevice(button)

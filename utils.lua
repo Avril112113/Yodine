@@ -1,6 +1,9 @@
 -- Helpful functions, shorthands ect
 
 
+GetFont = love.graphics.getFont
+
+
 local images = {}
 function GetImage(path)
 	if images[path] ~= nil then
@@ -32,4 +35,21 @@ function AtTimeInterval(s, sm)
 	return love.timer.getTime() % s < sm
 end
 
-GetFont = love.graphics.getFont
+function DeepCopy(tbl)
+	local newTbl = {}
+	if getmetatable(tbl) ~= nil then
+		setmetatable(newTbl, getmetatable(tbl))
+	end
+	for i,v in pairs(tbl) do
+		if type(v) == "table" then
+			newTbl[i] = DeepCopy(v)
+		else
+			newTbl[i] = v
+		end
+	end
+	return newTbl
+end
+
+function triangle(mode, x, y, w, h)
+	love.graphics.polygon(mode, x, y, x+w, y+(h/2), x, y+h)
+end

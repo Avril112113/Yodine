@@ -1,19 +1,3 @@
-local function deepCopy(tbl)
-	local newTbl = {}
-	if getmetatable(tbl) ~= nil then
-		setmetatable(newTbl, getmetatable(tbl))
-	end
-	for i,v in pairs(tbl) do
-		if type(v) == "table" then
-			newTbl[i] = deepCopy(v)
-		else
-			newTbl[i] = v
-		end
-	end
-	return newTbl
-end
-
-
 ---@class MapObject
 local MapObject = {
 	-- NOTE: a device is just an 'extention' of this (Technicaly its the other way round in code)
@@ -26,7 +10,7 @@ local MapObject = {
 }
 MapObject.__index = MapObject
 function MapObject.new(x, y, device)
-	local _self = deepCopy(device)
+	local _self = DeepCopy(device)
 	_self.x = x
 	_self.y = y
 	_self.connections = {}
