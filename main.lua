@@ -231,8 +231,8 @@ function love.mousereleased(x, y, button)
 			selectedDevice = nil
 			return
 		elseif obj then
+			selectedDevice = obj
 			if obj.clicked then
-				selectedDevice = obj
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
 				return
 			end
