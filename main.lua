@@ -31,7 +31,11 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-:ChipWait = -1
+
+
+
+
+goto 5 :LEDState = 1
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end

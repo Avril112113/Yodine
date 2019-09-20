@@ -85,10 +85,8 @@ function vm:execCode(code)
 	for _, v in ipairs(code) do
 		-- i think empty lines cause empty string to be in line.code ???
 		if type(v) ~= "string" then
-			local ok, result = xpcall(function()
-				self:executeStatement(v)
-			end, execCode_errHandler)
-			if not ok then
+			local ok, result = xpcall(self.executeStatement, execCode_errHandler, self, v)
+			if not ok and result == true then
 				if result == "not enough memory" then
 					self:pushError({
 						msg="Ran out of Memory"
@@ -103,6 +101,8 @@ function vm:execCode(code)
 						msg="CRITIAL VM ERROR"
 					})
 				end
+				break
+			elseif result == false then
 				break
 			end
 		end
@@ -371,7 +371,6 @@ function vm:st_goto(ast)
 			level="error",
 			msg="attempt to goto a invalid line, it was not a number."
 		})
-		self:haltLine()
 	else
 		if ln <= 0 then
 			ln = 1
@@ -380,6 +379,7 @@ function vm:st_goto(ast)
 		end
 		self.line = ln-1
 	end
+	self:haltLine()
 end
 
 function vm:_if(ast)
