@@ -14,6 +14,7 @@ local yolol = require "yolol"
 local yololVM = require "yololVM"
 
 local input = [[
+x=a---b
 ]]
 local result = yolol.parse(input)
 

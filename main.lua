@@ -1,7 +1,8 @@
-package.path = package.path .. ";libs/?.lua;libs/?/init.lua"
-package.cpath = package.cpath .. ";libs/?.dll"
+package.path = "libs/?.lua;libs/?/init.lua;" .. package.path
+package.cpath = "libs/?.dll;" .. package.cpath
 
---[[TMP]]  -- require "test"
+-- require "test"
+-- require "test_rpc"
 require "utils"  -- provides a set of global functions
 
 --[ =[
