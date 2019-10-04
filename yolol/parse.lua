@@ -1,5 +1,6 @@
 local lpl = require "lpeglabel"
 local re = require "relabel"
+local precedence = require "yolol.precedence"
 
 local grammarPath = "yolol/grammar.relabel"
 local grammarFile = io.open(grammarPath, "r")
@@ -17,39 +18,37 @@ local function pusherror(err)
 end
 
 
-local operatorData = {
-	-- ["OPERATOR"]={Precedence, RightAssoc, TypeName}
-	["^"]={7, true, "exp"},
-	["*"]={6, false, "mul"},
-	["/"]={6, false, "mul"},
-	["%"]={6, false, "mul"},
-	["+"]={5, false, "add"},
-	["-"]={5, false, "add"},
-	["<"]={4, false, "neq"},
-	[">"]={4, false, "neq"},
-	["<="]={4, false, "neq"},
-	[">="]={4, false, "neq"},
-	["!="]={3, false, "eq"},
-	["=="]={3, false, "eq"},
-	["or"]={2, false, "or"},
-	["and"]={1, true, "and"},
-}
---- NOTE: only handles binary operators
----@param data any @ YAST_Base
+local unaryOpData = precedence.unaryOpData
+local binaryOpData = precedence.binaryOpData
+---@param data any
 ---@param min_precedence number
-local function climbPrecedence(data, min_precedence)
+local function _climbPrecedence(data, min_precedence)
 	local lhs = table.remove(data, 1)
+	if type(lhs) == "string" then
+		local opData = unaryOpData[lhs]
+		if opData == nil then
+			error("Invalid op, was unary '" .. lhs .. "' but expected a valid operator")
+		end
+		if #opData ~= 2 then
+			error("Invalid opData, data for unary '" .. lhs .. "' does not contain 2 values")
+		end
+		lhs = {
+			type=opData[2],
+			operator=lhs,
+			rhs=_climbPrecedence(data, opData[1])
+		}
+	end
 	while #data > 0 do
 		local lahead = data[1]
 		if type(lahead) ~= "string" then break end
 
 		local op = lahead:lower()
-		local opData = operatorData[op]
+		local opData = binaryOpData[op]
 		if opData == nil then
-			error("Invalid op, bad operator, was '" .. op .. "' but expected an operator in opPrecedence")
+			error("Invalid op, was binary '" .. op .. "' but expected a valid operator")
 		end
 		if #opData ~= 3 then
-			error("Invalid opData, opData for '" .. op .. "' does not contain 3 values")
+			error("Invalid opData, data for binary '" .. op .. "' does not contain 3 values")
 		end
 
 		if opData[1] < min_precedence then
@@ -59,14 +58,14 @@ local function climbPrecedence(data, min_precedence)
 		lahead = table.remove(data, 1)
 
 		local nextPrecedence = opData[1]
-		if not opData[2] then
+		if opData[3] == false then
 			nextPrecedence = nextPrecedence + 1
 		end
 		lhs = {
-			type="expression::binary_op", -- "::" .. opData[3],
+			type=opData[2],
 			lhs=lhs,
 			operator=op,
-			rhs=climbPrecedence(data, nextPrecedence)
+			rhs=_climbPrecedence(data, nextPrecedence)
 		}
 	end
 	return lhs
@@ -182,7 +181,7 @@ local defs = {
 		return {
 			type="statement::assignment",
 			identifier=identifier,
-			operator=operator,
+			operator=operator and operator:gsub(" ", ""),
 			value=value
 		}
 	end,
@@ -222,7 +221,7 @@ local defs = {
 	neg=function(operator, operand)
 		return {
 			type="expression::unary_op", -- "expression::unary_op::neg",
-			operator=operator,
+			operator=operator and operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
@@ -245,7 +244,7 @@ local defs = {
 		return {
 			type="expression::unary_op", -- "expression::unary_op::pre_add",
 			prpo="pre",
-			operator=operator,
+			operator=operator and operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
@@ -253,7 +252,7 @@ local defs = {
 		return {
 			type="expression::unary_op", -- "expression::unary_op::post_add",
 			prpo="post",
-			operator=operator,
+			operator=operator and operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
