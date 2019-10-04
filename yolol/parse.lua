@@ -100,6 +100,13 @@ local defs = {
 			msg="Syntax Error: Missing `hen' keyword."
 		}
 	end,
+	EXPECT_IDENT=function(pos)
+		pusherror {
+			type="EXPECT_IDENT",
+			pos=pos,
+			msg="Syntax Error: Expected an identifier but got a value."
+		}
+	end,
 	INVALID_DIGIT=function(pos)
 		pusherror {
 			type="INVALID_DIGIT",
@@ -244,7 +251,7 @@ local defs = {
 	end,
 	post_add=function(operand, operator)
 		return {
-			type="expression::unary_op", -- "post_add",
+			type="expression::unary_op", -- "expression::unary_op::post_add",
 			prpo="post",
 			operator=operator,
 			operand=operand
