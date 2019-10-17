@@ -179,8 +179,8 @@ function vm:evalExpr(ast)
 			end
 			return leftValue % rightValue
 		elseif operator == "+" then
-			if type(leftValue) == "string" or type(leftValue) == "string" then
-				local str = tostring(leftValue) .. tostring(leftValue)
+			if type(leftValue) == "string" or type(rightValue) == "string" then
+				local str = tostring(leftValue) .. tostring(rightValue)
 				if #str > self.MAX_STR_LENGTH then
 					self:pushError({
 						level="warn",
@@ -190,7 +190,7 @@ function vm:evalExpr(ast)
 				end
 				return str
 			else
-				return leftValue + leftValue
+				return leftValue + rightValue
 			end
 		elseif operator == "-" then
 			return leftValue - rightValue
@@ -284,7 +284,7 @@ function vm:evalExpr(ast)
 			elseif ast.operator == "--" then
 				newValue = value - 1
 			else
-				errorVM("invalid operator " .. ast.operator .. " for unary_add handling in eval, expected a valid operator")
+				errorVM("invalid operator " .. tostring(ast.operator) .. " for unary_add handling in eval, expected a valid operator")
 			end
 			if identifier ~= nil then
 				self:setVariableFromName(identifier, newValue)
@@ -295,10 +295,10 @@ function vm:evalExpr(ast)
 				return value
 			end
 		else
-			errorVM("invalid keyword " .. ast.operator .. " for keyword handling in eval, expected a valid keyword")
+			errorVM("invalid keyword " .. tostring(ast.operator) .. " for keyword handling in eval, expected a valid keyword")
 		end
 	else
-		errorVM("invalid type " .. ast.type .. " for an eval, expected a valid expresstion type")
+		errorVM("invalid type " .. tostring(ast.type) .. " for an eval, expected a valid expresstion type")
 	end
 end
 
