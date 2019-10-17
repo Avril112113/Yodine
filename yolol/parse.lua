@@ -70,6 +70,21 @@ local function _climbPrecedence(data, min_precedence)
 	end
 	return lhs
 end
+---@param data any
+---@param min_precedence number
+local function climbPrecedence(data, min_precedence)
+	min_precedence = min_precedence or 1
+	local result = _climbPrecedence(data, min_precedence)
+	if #data > 0 then
+		pusherror {
+			type="internal_climbPrecedence_unparsed",
+			pos=-1,
+			msg="INTERNAL: climbPrecedence error, unparsed data",
+			ast={type="<climbPrecedence:DATA>", data}  -- not really AST but, its close ;)
+		}
+	end
+	return result
+end
 
 ---@class YDEFS
 local defs = {

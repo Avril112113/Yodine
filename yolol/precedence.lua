@@ -1,22 +1,22 @@
 return {
 	unaryOpData={
-		
+		-- ["OPERATOR"]={Precedence, TypeName}
 	},
 	binaryOpData = {
-		-- ["OPERATOR"]={Precedence, RightAssoc, TypeName}
-		["^"]={7, true, "exp"},
-		["*"]={6, false, "mul"},
-		["/"]={6, false, "mul"},
-		["%"]={6, false, "mul"},
-		["+"]={5, false, "add"},
-		["-"]={5, false, "add"},
-		["<"]={4, false, "neq"},
-		[">"]={4, false, "neq"},
-		["<="]={4, false, "neq"},
-		[">="]={4, false, "neq"},
-		["!="]={3, false, "eq"},
-		["=="]={3, false, "eq"},
-		["or"]={2, false, "or"},
-		["and"]={1, true, "and"},
+		-- ["OPERATOR"]={Precedence, TypeName, RightAssoc}
+		["^"]={7, "expression::binary_op", true},
+		["*"]={6, "expression::binary_op", false},
+		["/"]={6, "expression::binary_op", false},
+		["%"]={6, "expression::binary_op", false},
+		["+"]={5, "expression::binary_op", false},
+		["-"]={5, "expression::binary_op", false},
+		["<"]={4, "expression::binary_op", false},
+		[">"]={4, "expression::binary_op", false},
+		["<="]={4, "expression::binary_op", false},
+		[">="]={4, "expression::binary_op", false},
+		["!="]={3, "expression::binary_op", false},
+		["=="]={3, "expression::binary_op", false},
+		["or"]={2, "expression::binary_op", false},
+		["and"]={1, "expression::binary_op", false},
 	}
 }
