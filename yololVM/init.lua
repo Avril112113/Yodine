@@ -57,6 +57,7 @@ end
 ---@param name string
 ---@param value string|number
 function vm:setVariableFromName(name, value)
+	print(name, value)
 	if name:sub(1, 1) == ":" then
 		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
 	else
@@ -157,30 +158,62 @@ function vm:evalExpr(ast)
 		local leftValue = self:evalExpr(ast.lhs)
 		local rightValue = self:evalExpr(ast.rhs)
 		if operator == "^" then
-			return leftValue ^ rightValue
-		elseif operator == "*" then
-			return leftValue * rightValue
-		elseif operator == "/" then
-			if rightValue == 0 then
+			if type(leftValue) == "string" or type(rightValue) == "string" then
 				self:pushError({
 					level="error",
-					msg="Attempted division by zero."
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
 				})
 				self:haltLine()
+			else
+				return leftValue ^ rightValue
 			end
-			return leftValue / rightValue
-		elseif operator == "%" then
-			if rightValue == 0 then
+		elseif operator == "*" then
+			if type(leftValue) == "string" or type(rightValue) == "string" then
 				self:pushError({
 					level="error",
-					msg="Attempted modulo by zero."
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
 				})
 				self:haltLine()
+			else
+				return leftValue * rightValue
+			end
+		elseif operator == "/" then
+			if type(leftValue) == "string" or type(rightValue) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+				})
+				self:haltLine()
+			else
+				if rightValue == 0 then
+					self:pushError({
+						level="error",
+						msg="Attempted division by zero."
+					})
+					self:haltLine()
+				end
+				return leftValue / rightValue
+			end
+		elseif operator == "%" then
+			if type(leftValue) == "string" or type(rightValue) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+				})
+				self:haltLine()
+			else
+				if rightValue == 0 then
+					self:pushError({
+						level="error",
+						msg="Attempted modulo by zero."
+					})
+					self:haltLine()
+				end
 			end
 			return leftValue % rightValue
 		elseif operator == "+" then
-			if type(leftValue) == "string" or type(rightValue) == "string" then
-				local str = tostring(leftValue) .. tostring(rightValue)
+			if type(leftValue) == "string" and type(rightValue) == "string" then
+				local str = leftValue .. rightValue
 				if #str > self.MAX_STR_LENGTH then
 					self:pushError({
 						level="warn",
@@ -189,11 +222,28 @@ function vm:evalExpr(ast)
 					return str:sub(1, self.MAX_STR_LENGTH)
 				end
 				return str
+			elseif type(leftValue) == "string" or type(rightValue) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+				})
+				self:haltLine()
 			else
 				return leftValue + rightValue
 			end
 		elseif operator == "-" then
-			return leftValue - rightValue
+			if type(leftValue) == "string" and type(rightValue) == "string" then
+				local findPos =  #leftValue - string.find(string.reverse(leftValue), string.reverse(rightValue)) - (#rightValue - 1)
+				return leftValue:sub(0, findPos) .. leftValue:sub(findPos+#rightValue+1, #leftValue)
+			elseif type(leftValue) == "string" or type(rightValue) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+				})
+				self:haltLine()
+			else
+				return leftValue - rightValue
+			end
 		elseif operator == "==" then
 			if leftValue == rightValue then
 				return 1
@@ -255,34 +305,117 @@ function vm:evalExpr(ast)
 				return 0
 			end
 		elseif operator == "abs" then
-			return math.abs(value)
-		elseif operator == "cos" then
-			return math.cos(value)
-		elseif operator == "sin" then
-			return math.sin(value)
-		elseif operator == "tan" then
-			return math.tan(value)
-		elseif operator == "acos" then
-			return math.acos(value)
-		elseif operator == "asin" then
-			return math.asin(value)
-		elseif operator == "atan" then
-			return math.atan(value)
-		elseif operator == "sqrt" then
-			return math.sqrt(value)
-		elseif operator == "-" then
-			local value = self:evalExpr(ast.operand)
-			return -value
-		elseif operator == "++" or operator == "--" then
-			local identifier
-			if ast.operand ~= nil and ast.operand.type == "identifier" then
-				identifier = ast.operand.name
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.abs(value)
 			end
+		elseif operator == "cos" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.cos(value)
+			end
+		elseif operator == "sin" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.sin(value)
+			end
+		elseif operator == "tan" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.tan(value)
+			end
+		elseif operator == "acos" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.acos(value)
+			end
+		elseif operator == "asin" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.asin(value)
+			end
+		elseif operator == "atan" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.atan(value)
+			end
+		elseif operator == "sqrt" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return math.sqrt(value)
+			end
+		elseif operator == "-" then
+			if type(value) == "string" then
+				self:pushError({
+					level="error",
+					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+				})
+				self:haltLine()
+			else
+				return -self:evalExpr(ast.operand)
+			end
+		elseif operator == "++" or operator == "--" then
+			local identifier = ast.operand.name  -- i previously had a check here incase ast.operand was nil, it should not be needed tho.
 			local newValue
 			if ast.operator == "++" then
-				newValue = value + 1
+				if type(value) == "string" then
+					newValue = value .. " "
+				else
+					newValue = value + 1
+				end
 			elseif ast.operator == "--" then
-				newValue = value - 1
+				if type(value) == "string" then
+					if #value <= 0 then
+						self:pushError({
+							level="error",
+							msg="Attempt to remove from empty string"
+						})
+						self:haltLine()
+					end
+					newValue = value:sub(0, -2)
+				else
+					newValue = value - 1
+				end
 			else
 				errorVM("invalid operator " .. tostring(ast.operator) .. " for unary_add handling in eval, expected a valid operator")
 			end
@@ -290,8 +423,10 @@ function vm:evalExpr(ast)
 				self:setVariableFromName(identifier, newValue)
 			end
 			if ast.prpo == "pre" then
+				print(newValue)
 				return newValue
 			else
+				print(value)
 				return value
 			end
 		else
