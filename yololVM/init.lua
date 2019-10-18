@@ -31,6 +31,284 @@ local vm = {
 }
 vm.__index = vm
 
+
+function vm:eval_binary(ast, operator, leftValue, rightValue)
+	if operator == "^" then
+		if type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			return leftValue ^ rightValue
+		end
+	elseif operator == "*" then
+		if type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			return leftValue * rightValue
+		end
+	elseif operator == "/" then
+		if type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			if rightValue == 0 then
+				self:pushError({
+					level="error",
+					msg="Attempted division by zero."
+				})
+				self:haltLine()
+			end
+			return leftValue / rightValue
+		end
+	elseif operator == "%" then
+		if type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			if rightValue == 0 then
+				self:pushError({
+					level="error",
+					msg="Attempted modulo by zero."
+				})
+				self:haltLine()
+			end
+		end
+		return leftValue % rightValue
+	elseif operator == "+" then
+		if type(leftValue) == "string" and type(rightValue) == "string" then
+			local str = leftValue .. rightValue
+			if #str > self.MAX_STR_LENGTH then
+				self:pushError({
+					level="warn",
+					msg="Max string length reached, string was trimmed."
+				})
+				return str:sub(1, self.MAX_STR_LENGTH)
+			end
+			return str
+		elseif type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			return leftValue + rightValue
+		end
+	elseif operator == "-" then
+		if type(leftValue) == "string" and type(rightValue) == "string" then
+			local findPos =  #leftValue - string.find(string.reverse(leftValue), string.reverse(rightValue)) - (#rightValue - 1)
+			return leftValue:sub(0, findPos) .. leftValue:sub(findPos+#rightValue+1, #leftValue)
+		elseif type(leftValue) == "string" or type(rightValue) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
+			})
+			self:haltLine()
+		else
+			return leftValue - rightValue
+		end
+	elseif operator == "==" then
+		if leftValue == rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "!=" then
+		if leftValue ~= rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == ">" then
+		if leftValue > rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == ">=" then
+		if leftValue >= rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "<" then
+		if leftValue > rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "<=" then
+		if leftValue <= rightValue then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "and" then
+		if leftValue == 1 and rightValue == 1 then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "or" then
+		if leftValue == 1 or rightValue == 1 then
+			return 1
+		else
+			return 0
+		end
+	else
+		errorVM("invalid operator " .. operator .. " for eval_binary().")
+	end
+end
+
+function vm:eval_unary(ast, operator, value)
+	if operator == "not" then
+		if value == 0 then
+			return 1
+		else
+			return 0
+		end
+	elseif operator == "abs" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.abs(value)
+		end
+	elseif operator == "cos" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.cos(value)
+		end
+	elseif operator == "sin" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.sin(value)
+		end
+	elseif operator == "tan" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.tan(value)
+		end
+	elseif operator == "acos" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.acos(value)
+		end
+	elseif operator == "asin" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.asin(value)
+		end
+	elseif operator == "atan" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.atan(value)
+		end
+	elseif operator == "sqrt" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return math.sqrt(value)
+		end
+	elseif operator == "-" then
+		if type(value) == "string" then
+			self:pushError({
+				level="error",
+				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
+			})
+			self:haltLine()
+		else
+			return -self:evalExpr(ast.operand)
+		end
+	elseif operator == "++" or operator == "--" then
+		local identifier = ast.operand.name  -- i previously had a check here incase ast.operand was nil, it should not be needed tho.
+		local newValue
+		if ast.operator == "++" then
+			if type(value) == "string" then
+				newValue = value .. " "
+			else
+				newValue = value + 1
+			end
+		elseif ast.operator == "--" then
+			if type(value) == "string" then
+				if #value <= 0 then
+					self:pushError({
+						level="error",
+						msg="Attempt to remove from empty string"
+					})
+					self:haltLine()
+				end
+				newValue = value:sub(0, -2)
+			else
+				newValue = value - 1
+			end
+		else
+			errorVM("invalid operator " .. tostring(operator) .. " for unary_add handling in eval, expected a valid operator")
+		end
+		if identifier ~= nil then
+			self:setVariableFromName(identifier, newValue)
+		end
+		if ast.prpo == "pre" then
+			return newValue
+		else
+			return value
+		end
+	else
+		errorVM("invalid operator " .. tostring(operator) .. " for keyword handling in eval, expected a valid keyword")
+	end
+end
+
+
 ---@param chip Device_Chip
 ---@param initialLines string[]|nil
 function vm.new(chip, initialLines)
@@ -57,7 +335,6 @@ end
 ---@param name string
 ---@param value string|number
 function vm:setVariableFromName(name, value)
-	print(name, value)
 	if name:sub(1, 1) == ":" then
 		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
 	else
@@ -157,279 +434,11 @@ function vm:evalExpr(ast)
 		local operator = ast.operator:lower()
 		local leftValue = self:evalExpr(ast.lhs)
 		local rightValue = self:evalExpr(ast.rhs)
-		if operator == "^" then
-			if type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				return leftValue ^ rightValue
-			end
-		elseif operator == "*" then
-			if type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				return leftValue * rightValue
-			end
-		elseif operator == "/" then
-			if type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				if rightValue == 0 then
-					self:pushError({
-						level="error",
-						msg="Attempted division by zero."
-					})
-					self:haltLine()
-				end
-				return leftValue / rightValue
-			end
-		elseif operator == "%" then
-			if type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				if rightValue == 0 then
-					self:pushError({
-						level="error",
-						msg="Attempted modulo by zero."
-					})
-					self:haltLine()
-				end
-			end
-			return leftValue % rightValue
-		elseif operator == "+" then
-			if type(leftValue) == "string" and type(rightValue) == "string" then
-				local str = leftValue .. rightValue
-				if #str > self.MAX_STR_LENGTH then
-					self:pushError({
-						level="warn",
-						msg="Max string length reached, string was trimmed."
-					})
-					return str:sub(1, self.MAX_STR_LENGTH)
-				end
-				return str
-			elseif type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				return leftValue + rightValue
-			end
-		elseif operator == "-" then
-			if type(leftValue) == "string" and type(rightValue) == "string" then
-				local findPos =  #leftValue - string.find(string.reverse(leftValue), string.reverse(rightValue)) - (#rightValue - 1)
-				return leftValue:sub(0, findPos) .. leftValue:sub(findPos+#rightValue+1, #leftValue)
-			elseif type(leftValue) == "string" or type(rightValue) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-				})
-				self:haltLine()
-			else
-				return leftValue - rightValue
-			end
-		elseif operator == "==" then
-			if leftValue == rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "!=" then
-			if leftValue ~= rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == ">" then
-			if leftValue > rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == ">=" then
-			if leftValue >= rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "<" then
-			if leftValue > rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "<=" then
-			if leftValue <= rightValue then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "and" then
-			if leftValue == 1 and rightValue == 1 then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "or" then
-			if leftValue == 1 or rightValue == 1 then
-				return 1
-			else
-				return 0
-			end
-		else
-			errorVM("invalid operator " .. ast.operator .. " for binary math handling in eval.")
-		end
+		return self:eval_binary(ast, operator, leftValue, rightValue)
 	elseif ast.type == "expression::unary_op" then
 		local operator = ast.operator:lower()
 		local value = self:evalExpr(ast.operand)
-		if operator == "not" then
-			if value == 0 then
-				return 1
-			else
-				return 0
-			end
-		elseif operator == "abs" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.abs(value)
-			end
-		elseif operator == "cos" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.cos(value)
-			end
-		elseif operator == "sin" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.sin(value)
-			end
-		elseif operator == "tan" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.tan(value)
-			end
-		elseif operator == "acos" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.acos(value)
-			end
-		elseif operator == "asin" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.asin(value)
-			end
-		elseif operator == "atan" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.atan(value)
-			end
-		elseif operator == "sqrt" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return math.sqrt(value)
-			end
-		elseif operator == "-" then
-			if type(value) == "string" then
-				self:pushError({
-					level="error",
-					msg="Attempt to `" .. tostring(operator) .. "` on " .. type(value)
-				})
-				self:haltLine()
-			else
-				return -self:evalExpr(ast.operand)
-			end
-		elseif operator == "++" or operator == "--" then
-			local identifier = ast.operand.name  -- i previously had a check here incase ast.operand was nil, it should not be needed tho.
-			local newValue
-			if ast.operator == "++" then
-				if type(value) == "string" then
-					newValue = value .. " "
-				else
-					newValue = value + 1
-				end
-			elseif ast.operator == "--" then
-				if type(value) == "string" then
-					if #value <= 0 then
-						self:pushError({
-							level="error",
-							msg="Attempt to remove from empty string"
-						})
-						self:haltLine()
-					end
-					newValue = value:sub(0, -2)
-				else
-					newValue = value - 1
-				end
-			else
-				errorVM("invalid operator " .. tostring(ast.operator) .. " for unary_add handling in eval, expected a valid operator")
-			end
-			if identifier ~= nil then
-				self:setVariableFromName(identifier, newValue)
-			end
-			if ast.prpo == "pre" then
-				return newValue
-			else
-				return value
-			end
-		else
-			errorVM("invalid keyword " .. tostring(ast.operator) .. " for keyword handling in eval, expected a valid keyword")
-		end
+		return self:eval_unary(ast, operator, value)
 	else
 		errorVM("invalid type " .. tostring(ast.type) .. " for an eval, expected a valid expresstion type")
 	end
@@ -456,40 +465,15 @@ function vm:st_assign(ast)
 	if ast.operator ~= "=" then
 		local oldValue = self:getVariableFromName(name)
 		if ast.operator == "+=" then
-			if type(oldValue) == "string" or type(value) == "string" then
-				value = tostring(oldValue) .. tostring(value)
-				if #value > self.MAX_STR_LENGTH then
-					self:pushError({
-						level="warn",
-						msg="Max string length reached, string was trimmed."
-					})
-					return value:sub(1, self.MAX_STR_LENGTH)
-				end
-			else
-				value = oldValue + value
-			end
+			value = self:eval_binary(ast, "+", oldValue, value)
 		elseif ast.operator == "-=" then
-			value = oldValue - value
+			value = self:eval_binary(ast, "-", oldValue, value)
 		elseif ast.operator == "*=" then
-			value = oldValue * value
+			value = self:eval_binary(ast, "*", oldValue, value)
 		elseif ast.operator == "/=" then
-			if value == 0 then
-				self:pushError({
-					level="error",
-					msg="Attempted division by zero."
-				})
-				self:haltLine()
-			end
-			value = oldValue / value
+			value = self:eval_binary(ast, "/", oldValue, value)
 		elseif ast.operator == "%=" then
-			if value == 0 then
-				self:pushError({
-					level="error",
-					msg="Attempted modulo by zero."
-				})
-				self:haltLine()
-			end
-			value = oldValue % value
+			value = self:eval_binary(ast, "%", oldValue, value)
 		else
 			errorVM("assign operator " .. tostring(ast.operator) .. " is not supported yet.")
 		end
