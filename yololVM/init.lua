@@ -423,10 +423,8 @@ function vm:evalExpr(ast)
 				self:setVariableFromName(identifier, newValue)
 			end
 			if ast.prpo == "pre" then
-				print(newValue)
 				return newValue
 			else
-				print(value)
 				return value
 			end
 		else
@@ -444,7 +442,7 @@ function vm:executeStatement(ast)
 	elseif ast.type == "statement::goto" then
 		self:st_goto(ast)
 	elseif ast.type == "statement::if" then
-		self:_if(ast)
+		self:st_if(ast)
 	elseif ast.type == "expression::unary_op" and ast.prpo ~= nil then
 		self:evalExpr(ast)
 	else
@@ -517,7 +515,7 @@ function vm:st_goto(ast)
 	self:haltLine()
 end
 
-function vm:_if(ast)
+function vm:st_if(ast)
 	local value = self:evalExpr(ast.condition)
 	if value == 0 then
 		if ast.else_body ~= nil then
