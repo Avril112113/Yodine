@@ -212,6 +212,22 @@ do
 			love.graphics.pop()
 		end
 
+		local panel_mousepressed = panel.mousepressed
+		local function anyChildIsHoverObject(obj)
+			if obj.children == nil then return false end
+			for _, child in pairs(obj.children) do
+				if child == loveframes.hoverobject then return true end
+			end
+			return false
+		end
+		function panel:mousepressed(x, y, button)
+			panel_mousepressed(self, x, y, button)
+
+			if self == loveframes.hoverobject or anyChildIsHoverObject(self) then
+				DevicesList.draggingDevice = device
+			end
+		end
+
 		base:AddItem(panel)
 	end
 

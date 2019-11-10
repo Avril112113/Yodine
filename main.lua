@@ -77,7 +77,7 @@ local function genBackgroundImage()
 		if (x+1)%BackgroundCellSize <= 1 or (y+1)%BackgroundCellSize <= 1 then
 			return 0, 0, 0, 1
 		else
-			return 0.8, 0.8, 0.8, 1
+			return 0.7, 0.7, 0.7, 1
 		end
 	end
 	imgData:mapPixel(mapCells)
@@ -147,14 +147,15 @@ function love.draw()
 		love.graphics.pop()
 	end
 
-	local fpsStr = "FPS: " .. tostring(love.timer.getFPS())
-	local fpsXOff = ww - GetFont():getWidth(fpsStr)
-	love.graphics.setColor(0, 0, 0, 1)
-	love.graphics.print(fpsStr, fpsXOff+1, 1)
-	love.graphics.setColor(1, 1, 1, 1)
-	love.graphics.print(fpsStr, fpsXOff)
-	
 	loveframes.draw()
+
+	local draggingDevice = menus.DevicesList.draggingDevice
+	if draggingDevice ~= nil then
+		love.graphics.push()
+		love.graphics.translate(love.mouse.getPosition())
+		draggingDevice:draw()
+		love.graphics.pop()
+	end
 end
 
 function love.update(dt)
@@ -165,6 +166,15 @@ function love.update(dt)
 	for _, v in pairs(LoadedMap.objects) do
 		if v.update then
 			v:update(dt)
+		end
+	end
+
+	local draggingDevice = menus.DevicesList.draggingDevice
+	if draggingDevice ~= nil then
+		if not love.mouse.isDown(1) then
+			local x, y = camera:mousePosition()
+			LoadedMap:createObject(x, y, draggingDevice)
+			menus.DevicesList.draggingDevice = nil
 		end
 	end
 end
