@@ -1,6 +1,6 @@
 ---@class MapObject
 local MapObject = {
-	-- NOTE: a device is just an 'extention' of this (Technicaly its the other way round in code)
+	-- NOTE: a device is just an 'extension' of this (Technically its the other way round in code)
 	---@type number
 	x=nil,
 	---@type number
@@ -10,15 +10,15 @@ local MapObject = {
 }
 MapObject.__index = MapObject
 function MapObject.new(x, y, device)
-	local _self = DeepCopy(device)
-	_self.x = x
-	_self.y = y
-	_self.connections = {}
-	_self._device = device  -- just incase we need the originial reference for comparison for example
-	for i, v in pairs(_self.fields) do
+	local self = setmetatable(DeepCopy(device), MapObject)
+	self.x = x
+	self.y = y
+	self.connections = {}
+	self._device = device  -- just incase we need the original reference for comparison for example
+
+	for i, v in pairs(self.fields) do
 		v.value = v.default
 	end
-	local self = setmetatable(_self, MapObject)
 	return self
 end
 

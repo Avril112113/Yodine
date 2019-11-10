@@ -52,7 +52,7 @@ function MemoryChip:getSize()
 end
 function MemoryChip:getWireDrawOffset()
 	local width, height = self:getSize()
-	return width/2, height
+	return width/2, height/2
 end
 
 deviceValidation.validateDevice(MemoryChip)

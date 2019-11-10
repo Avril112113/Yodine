@@ -14,7 +14,10 @@ local yolol = require "yolol"
 local yololVM = require "yololVM"
 
 local input = [[
-x=a---b
+a = "123"
+b = "2"
+result = a
+result -= b
 ]]
 local result = yolol.parse(input)
 
@@ -63,11 +66,25 @@ end
 local vm = yololVM.new(nil, result.program.lines)
 
 print("Running in VM (external variables will raise errors)")
-for i=1,20*10 do
-	io.write(".")
+local start = os.clock()
+for i=1,#vm.lines*1 do
+	i = i + 1
 	vm:step()
 end
-io.write("\n")
+local finish = os.clock()
+print("Took " .. tostring(finish - start) .. "s to run.")
+
+print("Errors")
+for ln, errors in ipairs(vm.errors) do
+	for _, err in ipairs(errors) do
+		print("Error on line: " .. tostring(ln))
+		print(err.msg)
+	end
+end
+
+if vm.variables.result ~= nil then
+	print("VM `Result` variable: " .. yolol.helpers.strValueFromType(vm.variables.result))
+end
 
 print("Exit.")
 os.exit()

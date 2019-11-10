@@ -5,18 +5,18 @@ package.cpath = "libs/?.dll;" .. package.cpath
 -- require "test_rpc"
 require "utils"  -- provides a set of global functions
 
---[ =[
 -- Constant's and defining locals
 BackgroundCellSize = 20
 DefaultFont = GetFont()
 Consola = love.graphics.newFont("fonts/Consola.ttf")
 
 local background
-local selectedDevice
+
+local loveframes = require "loveframes"
+local camera = require "camera"
 
 local yolol = require "yolol"
-
-local camera = require "camera"
+local menus = require "menus"
 local devices = require "devices"
 local Map = require "Map"
 
@@ -32,11 +32,8 @@ LoadedMap:connect(testButton, testChip)
 
 local lines = testChip.lines
 local test_data = [[
-
-
-
-
-goto 5 :LEDState = 1
+:LEDState = not :LEDState
+goto 1
 ]]
 local test_data_lines = {}
 for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end
@@ -49,7 +46,6 @@ local testMem = LoadedMap:createObject(100, 0, devices.memory_chip)
 LoadedMap:connect(testMem, testChip)
 
 -- Variables
-local connectionTarget
 CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
 
 
@@ -64,7 +60,6 @@ function SetCenterDrawObject(obj)
 			error("Attempt to set center draw object but does not have :getSizeGUI()")
 		end
 		CenterDrawObject = obj
-		selectedDevice = nil
 	end
 end
 function GetCenterDrawObjectPositionData()
@@ -96,6 +91,7 @@ function love.load()
 	camera.x = -love.graphics.getWidth()/2
 	camera.y = -love.graphics.getHeight()/2
 
+	-- copy help file from game directory to save directory
 	love.filesystem.write("/Help.txt", love.filesystem.read("/data/Help.txt"))
 
 	love.keyboard.setKeyRepeat(true)
@@ -151,46 +147,18 @@ function love.draw()
 		love.graphics.pop()
 	end
 
-	if selectedDevice ~= nil then
-		local x, y = 10, 10
-		local w = 280
-		local wmp = w-(x*2)
-		love.graphics.setColor(0.3, 0.3, 0.3, 0.8)
-		love.graphics.rectangle("fill", 0, 0, w, wh)
-		love.graphics.setColor(1, 1, 1, 1)
-		love.graphics.printf(selectedDevice.name, x, y, wmp, "center")
-		y = y + GetFont():getHeight()
-		love.graphics.printf(selectedDevice.desc, x, y, wmp, "left")
-		y = y + GetFont():getHeight() + 10
-		love.graphics.print("Fields", x, y)
-		y = y + GetFont():getHeight()
-		for i, v in pairs(selectedDevice.fields) do
-			-- TODO: use `v.sort` to order the field
-			-- TODO: make all values aligned to each other
-			local nameStr = v.name .. ":  "
-			love.graphics.print(nameStr, x+10, y)
-			local valueStr
-			if type(v.value) == "string" then
-				valueStr = "\"" .. v.value .. "\""
-			else
-				valueStr = tostring(v.value)
-			end
-			local nameStrW = GetFont():getWidth(nameStr)
-			local px = x+10+nameStrW
-			love.graphics.printf(valueStr, px, y, (px-x)-10)
-			y = y + GetFont():getHeight()
-		end
-	end
-
 	local fpsStr = "FPS: " .. tostring(love.timer.getFPS())
 	local fpsXOff = ww - GetFont():getWidth(fpsStr)
 	love.graphics.setColor(0, 0, 0, 1)
 	love.graphics.print(fpsStr, fpsXOff+1, 1)
 	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.print(fpsStr, fpsXOff)
+	
+	loveframes.draw()
 end
 
 function love.update(dt)
+	loveframes.update(dt)
 	-- TODO: fix able to use RMB while hovered over a CenterDrawObject (or other potential GUI)
 	camera:dragPosition(2)
 
@@ -201,8 +169,10 @@ function love.update(dt)
 	end
 end
 
-function love.mousereleased(x, y, button)
-	local ww, wh = love.graphics.getWidth(), love.graphics.getHeight()
+function love.mousepressed(x, y, button)
+	loveframes.mousepressed(x, y, button)
+	if loveframes.collisioncount > 0 then return end
+
 	local worldX, worldY = camera:cameraPosition(x, y)
 	local has_cdo = false
 	local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
@@ -213,37 +183,38 @@ function love.mousereleased(x, y, button)
 	end
 	local obj = LoadedMap:getObjectAt(worldX, worldY)
 	if button == 3 then
-		if connectionTarget ~= nil and obj ~= nil then
-			if LoadedMap:isConnected(obj, connectionTarget) then
-				LoadedMap:disconnect(obj, connectionTarget)
+		if menus.DeviceInfo.device ~= nil and obj ~= nil then
+			if LoadedMap:isConnected(obj, menus.DeviceInfo.device) then
+				LoadedMap:disconnect(obj, menus.DeviceInfo.device)
 			else
-				LoadedMap:connect(obj, connectionTarget)
+				LoadedMap:connect(obj, menus.DeviceInfo.device)
 			end
-			connectionTarget = nil
 		end
-		return
-	elseif button == 2 then
-		if not (has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y)) then
-			selectedDevice = obj
-		end
+		menus.DeviceInfo.setDevice(obj)
 	elseif button == 1 then
 		if has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
 			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
-			selectedDevice = nil
 			return
 		elseif obj then
-			selectedDevice = obj
+			menus.DeviceInfo.setDevice(obj)
 			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
-				return
 			end
 		else
-			selectedDevice = obj
+			menus.DeviceInfo.setDevice(obj)
 		end
 	end
 end
+function love.mousereleased(x, y, button)
+	loveframes.mousereleased(x, y, button)
+end
+
+function love.wheelmoved(x, y)
+	loveframes.wheelmoved(x, y)
+end
 
 function love.keypressed(key)
+	loveframes.keypressed(key)
 	if CenterDrawObject ~= nil and key == "escape" then
 		SetCenterDrawObject()
 	elseif CenterDrawObject == nil and key == "space" then
@@ -252,16 +223,26 @@ function love.keypressed(key)
 		end
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
+	elseif key == "f12" then
+		loveframes.config.DEBUG = not loveframes.config.DEBUG
 	end
+end
+function love.keyreleased(key)
+	loveframes.keyreleased(key)
 end
 
 function love.textinput(text)
 	if CenterDrawObject ~= nil and CenterDrawObject.textinputGUI then
 		CenterDrawObject:textinputGUI(text)
+	else	
+		loveframes.textinput(text)
 	end
 end
 
 function love.resize()
 	genBackgroundImage()
+
+	for _, menu in pairs(menus) do
+		menu.update()
+	end
 end
---]=]
