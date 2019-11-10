@@ -17,33 +17,11 @@ local camera = require "camera"
 
 local yolol = require "yolol"
 local menus = require "menus"
-local devices = require "devices"
+-- local devices = require "devices"
 local Map = require "Map"
 
 
 LoadedMap = Map.new()
--- Testing stuff
-local testButton = LoadedMap:createObject(0, -100, devices.button)
-local testLED = LoadedMap:createObject(100, -100, devices.led)
----@type Device_Chip
-local testChip = LoadedMap:createObject(-100, 0, devices.chip)
-LoadedMap:connect(testButton, testLED)
-LoadedMap:connect(testButton, testChip)
-
-local lines = testChip.lines
-local test_data = [[
-:LEDState = not :LEDState
-goto 1
-]]
-local test_data_lines = {}
-for line in test_data:gmatch("([^\n]*)\n?") do table.insert(test_data_lines, line) end
-for i=1,#test_data_lines do
-	lines[i] = test_data_lines[i]
-end
-testChip:codeChanged()
-
-local testMem = LoadedMap:createObject(100, 0, devices.memory_chip)
-LoadedMap:connect(testMem, testChip)
 
 -- Variables
 CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
@@ -108,10 +86,8 @@ function love.draw()
 	love.graphics.draw(background, -camera.x%BackgroundCellSize-BackgroundCellSize, -camera.y%BackgroundCellSize-BackgroundCellSize)
 
 	camera:set()
-		love.graphics.setColor(0, 0, 0, 0.7)
+		love.graphics.setColor(0, 0, 0, 0.5)
 		love.graphics.print("0,0", -GetFont():getWidth("0,0")/2, -GetFont():getHeight()+2)
-		love.graphics.setColor(1, 0, 0, 1)
-		love.graphics.circle("line", 0, 0, 50)
 
 		love.graphics.setColor(0.3, 0.3, 0.3, 1)
 		love.graphics.setLineWidth(3)
