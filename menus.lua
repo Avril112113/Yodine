@@ -194,8 +194,8 @@ do
 		DeviceName:SetText {{font=DevicesList.deviceNameFont, color=textColor}, device.name or "<NO_DEVICE_NAME>"}
 
 		local DescText = loveframes.Create("text", panel)
-		-- TODO: move SetSize to DevicesList.update() if possible as it is based on panelWidth which is based on base which is can be changed in DevicesList.update()
 		DescText:SetSize(leftOfPreviewWidth, -1)
+		-- SetPos is fine as long as base:SetSize uses a constant width in DevicesList.update()
 		DescText:SetPos(padding, padding + DeviceName.y + DeviceName.height)
 		DescText:SetText {{font=DevicesList.deviceDescFont, color=textColor}, device.desc or "No Device Description."}
 		local descTextBottom = padding + DeviceName.y + DeviceName.height + DescText.y + DescText.height + (padding*2)
