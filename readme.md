@@ -11,19 +11,18 @@ Just do not take ownership of what is not yours. (i should add a licence but idk
 This is made to attempt at emulating a data network from the game StarBase (not out yet)  
 its a 2D editor not 3D (as of right now)  
 
-This is heavly work in progress but feedback is always nice.  
+This is heavily work in progress but feedback is always nice.  
 
 Until this project is at a more usable state it might be quite messy, Sorry.
 
 # grammar.relabel
 When editing the grammar i made a vscode extension for fancy colors  
-When i get my desktop PC back in the UK i will add my vscode extention for syntax highlighting the grammar file  
+When i get my desktop PC back in the UK i will add my vscode extension for syntax highlighting the grammar file  
 
 # The DLL (lepglabel.dll)
-Was a mistake, but its there now  
 Its just `LPegLabel` compiled for LuaJIT  
-If you don't trust it then compile it your self  
-or if you have luarocks and it works then you can use luarocks but im not sure about LuaJit  
+If you don't trust it then feel free to compile it your self (https://github.com/sqmedeiros/lpeglabel)  
+or if you have luarocks and it works for LuaJIT then you can use luarocks  
 
 # /reference
 This folder only contains files i used for reference  
