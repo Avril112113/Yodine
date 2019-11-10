@@ -1,11 +1,13 @@
 {
     "Lua.diagnostics.globals": [
         "unpack",
-        "love",
         "pushTest",
         "parse",
         "defs",
         "checkAST"
     ],
+    "Lua.workspace.library": {
+        "C:\\Users\\dude112113\\Desktop\\Dudes Stuff\\AA Coding Projects\\Lua\\. LoveApiEmmyLua": true
+    },
     "Lua.runtime.version": "LuaJIT"
 }
