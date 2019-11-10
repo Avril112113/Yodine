@@ -189,8 +189,9 @@ function love.mousepressed(x, y, button)
 			else
 				LoadedMap:connect(obj, menus.DeviceInfo.device)
 			end
+		else
+			menus.DeviceInfo.setDevice(obj)
 		end
-		menus.DeviceInfo.setDevice(obj)
 	elseif button == 1 then
 		if has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
 			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
