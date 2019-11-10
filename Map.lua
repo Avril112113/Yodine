@@ -48,6 +48,17 @@ function Map:createObject(x, y, device)
 	return obj
 end
 
+---@param obj MapObject
+function Map:removeObject(obj)
+	for i, v in pairs(self.objects) do
+		if v == obj then
+			table.remove(self.objects, i)
+			return true
+		end
+	end
+	return false
+end
+
 ---@param x number
 ---@param y number
 function Map:getObjectAt(x, y)

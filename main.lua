@@ -136,8 +136,9 @@ end
 
 function love.update(dt)
 	loveframes.update(dt)
-	-- TODO: fix able to use RMB while hovered over a CenterDrawObject (or other potential GUI)
-	camera:dragPosition(2)
+	if loveframes.collisioncount <= 0 then
+		camera:dragPosition(2)
+	end
 
 	for _, v in pairs(LoadedMap.objects) do
 		if v.update then
@@ -200,16 +201,18 @@ function love.wheelmoved(x, y)
 	loveframes.wheelmoved(x, y)
 end
 
-function love.keypressed(key)
-	loveframes.keypressed(key)
+function love.keypressed(key, isrepeat)
+	loveframes.keypressed(key, isrepeat)
+
 	if CenterDrawObject ~= nil and key == "escape" then
 		SetCenterDrawObject()
-	elseif CenterDrawObject == nil and key == "space" then
-		for i, v in pairs(testChip.vm.variables) do
-			print(i, yolol.helpers.strValueFromType(v))
-		end
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
+	elseif loveframes.collisioncount <= 0 and (key == "delete" or key == "x") then
+		local worldX, worldY = camera:mousePosition()
+		local obj = LoadedMap:getObjectAt(worldX, worldY)
+
+		LoadedMap:removeObject(obj)
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
 	end
@@ -221,7 +224,7 @@ end
 function love.textinput(text)
 	if CenterDrawObject ~= nil and CenterDrawObject.textinputGUI then
 		CenterDrawObject:textinputGUI(text)
-	else	
+	else
 		loveframes.textinput(text)
 	end
 end
