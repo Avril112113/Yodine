@@ -25,7 +25,7 @@ local ChipWait = {
 	name="ChipWait",
 	default=0,
 	desc="Controls script execution. Negative values mean execution is paused, zero means script is being executed, and positive values mean execution will continue after the amount of line runs have passed that are equal to the value.",
-	---@type Device_Button
+	---@type Device_Chip
 	parent=nil,
 	---@type number
 	value=nil
@@ -42,7 +42,7 @@ end
 ---@class Device_Chip
 local chip = {
 	name="Chip",
-	desc="TODO",
+	desc="A chip that executes YOLOL code.\nNOTE: the YOLOL parser and VM made for this program is work in progress and there may be bugs or missing features.",
 	fields={
 		chipWait=ChipWait
 	},
@@ -54,7 +54,7 @@ local chip = {
 
 	-- Editor
 	---@type string[]
-	lines=nil,
+	lines=setmetatable({"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}, {__index=function() error("Attempt to index on dummy lines for chip device.") end}),
 	---@type number
 	line=1,
 	---@type number
@@ -133,14 +133,16 @@ function chip:draw(opened)
 	end
 
 	-- rectangle for current line
-	if self.fields.chipWait.value > 0 then
+	if self.fields.chipWait.value ~= nil and self.fields.chipWait.value > 0 then
 		love.graphics.setColor(1, 0.49, 0, 0.6)
-	elseif self.fields.chipWait.value < 0 then
+	elseif self.fields.chipWait.value ~= nil and self.fields.chipWait.value < 0 then
 		love.graphics.setColor(0.75, 0.2, 0, 0.6)
 	else
 		love.graphics.setColor(0.49, 0.8, 0, 0.6)
 	end
-	love.graphics.rectangle("fill", 24, self.lineHeight*(self.vm.line-1), self.lineWidth, self.lineHeight)
+	if self.vm ~= nil then
+		love.graphics.rectangle("fill", 24, self.lineHeight*(self.vm.line-1), self.lineWidth, self.lineHeight)
+	end
 
 	for ln=1,#self.lines do
 		local lnStr = tostring(ln)
@@ -214,7 +216,7 @@ function chip:draw(opened)
 	love.graphics.rectangle("fill", self.lineWidth, 0, self.rightPanelWidth, self.lineHeight*#self.lines)
 	-- Pause button
 	local pauseButtonY = (self.lineHeight*#self.lines)-self.rightPanelWidth
-	if self.fields.chipWait.value < 0 then
+	if self.fields.chipWait.value ~= nil and self.fields.chipWait.value < 0 then
 		love.graphics.setColor(0.59, 0, 0, 1)
 		love.graphics.rectangle("fill", self.lineWidth, pauseButtonY, self.rightPanelWidth, self.rightPanelWidth)
 		love.graphics.setColor(1, 1, 1, 1)
@@ -233,31 +235,33 @@ function chip:draw(opened)
 		triangle("fill", self.lineWidth+tqw, pauseButtonY+tqw, tw-thw, tw-thw)
 	end
 
-	local errorBorderLevel = 99
-	for i, line in pairs(self.vm.lines) do
-		for _, err in pairs(line.metadata.errors) do
-			local errNum = errorLevelToNumber(err.level)
-			if errNum < errorBorderLevel then
-				errorBorderLevel = errNum
+	if self.vm ~= nil then
+		local errorBorderLevel = 99
+		for i, line in pairs(self.vm.lines) do
+			for _, err in pairs(line.metadata.errors) do
+				local errNum = errorLevelToNumber(err.level)
+				if errNum < errorBorderLevel then
+					errorBorderLevel = errNum
+				end
 			end
 		end
-	end
-	for i, errors in pairs(self.vm.errors) do
-		for _, err in pairs(errors) do
-			local errNum = errorLevelToNumber(err.level)
-			if errNum < errorBorderLevel then
-				errorBorderLevel = errNum
+		for i, errors in pairs(self.vm.errors) do
+			for _, err in pairs(errors) do
+				local errNum = errorLevelToNumber(err.level)
+				if errNum < errorBorderLevel then
+					errorBorderLevel = errNum
+				end
 			end
 		end
-	end
-	if errorBorderLevel < 99 then
-		local dw, dh = self:getSizeGUI()
-		love.graphics.setColor(errorLevelColor(errorBorderLevel))
-		if opened ~= true then
-			love.graphics.setLineWidth(15)
+		if errorBorderLevel < 99 then
+			local dw, dh = self:getSizeGUI()
+			love.graphics.setColor(errorLevelColor(errorBorderLevel))
+			if opened ~= true then
+				love.graphics.setLineWidth(15)
+			end
+			love.graphics.rectangle("line", -1, -1, dw+2, dh+2)
+			love.graphics.setLineWidth(3)
 		end
-		love.graphics.rectangle("line", -1, -1, dw+2, dh+2)
-		love.graphics.setLineWidth(3)
 	end
 end
 function chip:getSize()

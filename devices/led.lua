@@ -5,7 +5,7 @@ local LEDState = {
 	name="LEDState",
 	default=0,
 	desc="Its either on or off, its a light...",
-	---@type Device_Button
+	---@type Device_LED
 	parent=nil,
 	---@type number
 	value=nil
@@ -29,10 +29,9 @@ local LED = {
 }
 
 function LED:draw()
-	assert(self.fields.LEDState.value ~= nil)
 	-- everything is already transformed, just draw as 0, 0 was top-left
 	local LEDImg = GetImage("imgs/led.png")
-	if self.fields.LEDState.value == 0 then
+	if self.fields.LEDState.value ~= nil and self.fields.LEDState.value == 0 then
 		love.graphics.setColor(0.5, 0, 0, 1)
 	else
 		love.graphics.setColor(1, 0, 0, 1)

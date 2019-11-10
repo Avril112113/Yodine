@@ -6,7 +6,7 @@ local ChipField = {
 	default=0,
 	desc="No Desc",
 	sort=999,
-	---@type Device_Button
+	---@type Device_MemoryChip
 	parent=nil,
 	---@type number
 	value=nil
