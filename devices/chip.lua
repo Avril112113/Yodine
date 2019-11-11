@@ -119,10 +119,6 @@ function chip:loadFromSave(save)
 	self:codeChanged()
 end
 function chip:draw(opened)
-	if self.vm ~= nil then
-		print(self.vm.variables.a)
-	end
-
 	if opened ~= true then
 		love.graphics.scale(self:getScale())
 	end
