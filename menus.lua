@@ -296,6 +296,7 @@ do
 		local saveMap = LoadedMap:jsonify()
 		local saveMapStr = json.encode(saveMap)
 		love.filesystem.write(saveName, saveMapStr)
+		SavesMenu.refreshSavesList()
 	end
 
 	local SavesList = loveframes.Create("list", base)
@@ -306,6 +307,15 @@ do
 
 	function LoadSaveButton:OnClick()
 		if selectedSave ~= nil and love.filesystem.getInfo(selectedSave).type == "file" then
+			if #LoadedMap.objects > 0 then
+				local saveName = "save_autosave " .. os.date():gsub("/", "_"):gsub(":", ".") .. ".json"
+				print(saveName)
+				local saveMap = LoadedMap:jsonify()
+				local saveMapStr = json.encode(saveMap)
+				love.filesystem.write(saveName, saveMapStr)
+				SavesMenu.refreshSavesList()
+			end
+
 			local saveMapStr = love.filesystem.read(selectedSave)
 			local saveMap = json.decode(saveMapStr)
 			LoadedMap = Map.new(saveMap)
