@@ -25,16 +25,26 @@ LoadedMap = Map.new()
 
 -- Variables
 CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
-SelectedDevices = setmetatable({}, {
-	__newindex=function(self, index, value)
-		rawset(self, index, value)
-		if index == 1 then
-			menus.DeviceInfo.setDevice(value)
-		end
-	end
-})
+SelectedDevices = {}
 local dragSelectionPosition
 local isMovingSelection = false
+local hasMovedSelection = false
+
+local function addSelectedDevice(device)
+	if device == nil then return end
+	SelectedDevices[device] = device
+	menus.DeviceInfo.setDevice(device)
+end
+local function removeSelectedDevice(device)
+	SelectedDevices[device] = nil
+	if menus.DeviceInfo.device == device then
+		menus.DeviceInfo.setDevice(nil)
+	end
+end
+local function clearSelectedDevices()
+	SelectedDevices = {}
+	menus.DeviceInfo.setDevice(nil)
+end
 
 
 function SetCenterDrawObject(obj)
@@ -127,7 +137,7 @@ function love.draw()
 		love.graphics.setColor(1, 0.5, 0, 0.8)
 		love.graphics.setLineWidth(3)
 		love.graphics.setLineStyle("smooth")
-		for _, device in ipairs(SelectedDevices) do
+		for _, device in pairs(SelectedDevices) do
 			love.graphics.rectangle("line", device.x, device.y, device:getSize())
 		end
 
@@ -210,23 +220,16 @@ function love.mousepressed(x, y, button)
 			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
 		elseif obj == nil then
 			if not love.keyboard.isDown("lctrl") then
-				for i, _ in pairs(SelectedDevices) do
-					SelectedDevices[i] = nil
-				end
+				clearSelectedDevices()
 			end
 			dragSelectionPosition = {worldX, worldY}
 		elseif obj ~= nil then
-			if love.keyboard.isDown("lctrl") then
-				SelectedDevices[#SelectedDevices+1] = obj
-			else
-				for i, _ in pairs(SelectedDevices) do
-					SelectedDevices[i] = nil
-				end
-				SelectedDevices[1] = obj
-			end
+			addSelectedDevice(obj)
+
 			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
 			end
+			hasMovedSelection = false
 			isMovingSelection = true
 		end
 	end
@@ -237,6 +240,13 @@ function love.mousereleased(x, y, button)
 	if button == 1 then
 		if isMovingSelection then
 			isMovingSelection = false
+
+			if not hasMovedSelection and not love.keyboard.isDown("lctrl") then
+				local worldX, worldY = camera:cameraPosition(x, y)
+				local obj = LoadedMap:getObjectAt(worldX, worldY)
+				clearSelectedDevices()
+				addSelectedDevice(obj)
+			end
 		elseif dragSelectionPosition ~= nil then
 			local x1, y1 = dragSelectionPosition[1], dragSelectionPosition[2]
 			local x2, y2 = camera:mousePosition()
@@ -254,7 +264,7 @@ function love.mousereleased(x, y, button)
 			for _, obj in pairs(LoadedMap.objects) do
 				local objW, objH = obj:getSize()
 				if obj.x > x1-objW and obj.y > y1-objH and obj.x+objW < x2+objW and obj.y+objH < y2+objH then
-					SelectedDevices[#SelectedDevices+1] = obj
+					addSelectedDevice(obj)
 				end
 			end
 		end
@@ -263,7 +273,8 @@ end
 
 function love.mousemoved(x, y, dx, dy)
 	if isMovingSelection then
-		for _, v in ipairs(SelectedDevices) do
+		hasMovedSelection = true
+		for _, v in pairs(SelectedDevices) do
 			v.x = v.x + dx
 			v.y = v.y + dy
 		end
@@ -282,18 +293,13 @@ function love.keypressed(key, isrepeat)
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
 	elseif loveframes.collisioncount <= 0 and (key == "delete" or key == "x") then
-		if #SelectedDevices <= 0 then
-			local obj = LoadedMap:getObjectAt(camera:mousePosition())
-			SelectedDevices[1] = obj
+		local isEmpty = true; for _, _ in pairs(SelectedDevices) do isEmpty = false break end
+		if isEmpty then
+			addSelectedDevice(LoadedMap:getObjectAt(camera:mousePosition()))
 		end
-		for _, v in ipairs(SelectedDevices) do
-			if menus.DeviceInfo.device == v then
-				menus.DeviceInfo.setDevice(nil)
-			end
+		for _, v in pairs(SelectedDevices) do
+			removeSelectedDevice(v)
 			LoadedMap:removeObject(v)
-		end
-		for i, _ in pairs(SelectedDevices) do
-			SelectedDevices[i] = nil
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
