@@ -2,6 +2,7 @@ local json = require "json"
 local loveframes = require "loveframes"
 require "loveframes_ext"
 local devices = require "devices"
+local Map = require "Map"
 
 
 -- Patch terrible text colors
@@ -276,8 +277,17 @@ do
 	end
 
 	local SavePanel = loveframes.Create("panel", base)
+
 	local SaveNameEdit = loveframes.Create("textinput", SavePanel)
 	SaveNameEdit:SetText("save")
+
+	function SaveNameEdit:Update()
+		local pattern = "[/\\*?<>:|]"
+		if self:GetText():find(pattern) then
+			self:SetText(self:GetText():gsub(pattern, ""))
+		end
+	end
+
 	local SaveButton = loveframes.Create("button", SavePanel)
 	SaveButton:SetText("Save")
 
@@ -288,9 +298,35 @@ do
 		love.filesystem.write(saveName, saveMapStr)
 	end
 
-	-- TODO: list of saves (beings with `save_` ends with `.json`)
-	--       a load button to load the selected save
-	--       and finally a refresh button to refresh the list of saves
+	local SavesList = loveframes.Create("list", base)
+	local LoadSaveButton = loveframes.Create("button", base)
+	LoadSaveButton:SetText("Load Selected Save")
+
+	local selectedSave
+
+	function LoadSaveButton:OnClick()
+		if selectedSave ~= nil and love.filesystem.getInfo(selectedSave).type == "file" then
+			local saveMapStr = love.filesystem.read(selectedSave)
+			local saveMap = json.decode(saveMapStr)
+			LoadedMap = Map.new(saveMap)
+		end
+	end
+
+	function SavesMenu.refreshSavesList()
+		SavesList:Clear()
+		for _, path in pairs(love.filesystem.getDirectoryItems("/")) do
+			if path:sub(1, 5) == "save_" and path:sub(#path-4, #path) == ".json" then
+				local button = loveframes.Create("button")
+				button:SetText(path:sub(6, #path-5))
+				button.groupIndex = 1
+				function button:OnClick()
+					selectedSave = path
+				end
+				SavesList:AddItem(button)
+			end
+		end
+	end
+	SavesMenu.refreshSavesList()
 
 	function SavesMenu.update()
 		base:SetPos((love.graphics.getWidth() - base.width) / 2, (love.graphics.getHeight() - base.height) / 2)
@@ -303,6 +339,12 @@ do
 
 		SaveButton:SetSize(50, SavePanel.height)
 		SaveButton:SetPos(SavePanel.width-50, 0)
+
+		LoadSaveButton:SetSize(base.width-(padding*2), 28)
+		LoadSaveButton:SetPos(padding, base.height-LoadSaveButton.height-padding)
+
+		SavesList:SetSize(base.width-(padding*2), base.height-SavePanel.height-(padding*4)-LoadSaveButton.height-28)
+		SavesList:SetPos(padding, 28+SavePanel.y+SavePanel.height+padding)
 	end
 end
 
