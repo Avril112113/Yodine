@@ -53,3 +53,64 @@ end
 function triangle(mode, x, y, w, h)
 	love.graphics.polygon(mode, x, y, x+w, y+(h/2), x, y+h)
 end
+
+function table.serialize(_tbl)
+	local str = {}
+	local function serialize(tbl)
+		str[#str+1] = "{"
+		local firstElem = true
+		for i, v in pairs(tbl) do
+			if firstElem then
+				firstElem = false
+			else
+				str[#str+1] = ","
+			end
+			str[#str+1] = "["
+			if type(i) == "table" then
+				serialize(i)
+			elseif type(i) == "string" then
+				str[#str+1] = "\"" .. i:gsub("\"", "\\\"") .. "\""
+			else
+				str[#str+1] = tostring(i)
+			end
+			str[#str+1] = "]"
+			str[#str+1] = "="
+			if type(v) == "table" then
+				serialize(v)
+			elseif type(v) == "string" then
+				str[#str+1] = "\"" .. v:gsub("\"", "\\\"") .. "\""
+			else
+				str[#str+1] = tostring(v)
+			end
+		end
+		str[#str+1] = "}"
+	end
+	serialize(_tbl)
+	return table.concat(str)
+end
+
+function jsonify_table(tbl)
+	local new = {}
+	for i, v in pairs(tbl) do
+		new[i] = v.jsonify()
+	end
+	return new
+end
+
+function jsonify_auto(tbl)
+	local new = {}
+	for i, v in pairs(tbl) do
+		if type(v) == "table" then
+			if v.jsonify then
+				new[i] = v:jsonify()
+			else
+				new[i] = jsonify_auto(v)
+			end
+		elseif type(v) == "function" then
+			-- we cant jsonify a function
+		else
+			new[i] = v
+		end
+	end
+	return new
+end

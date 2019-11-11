@@ -1,3 +1,4 @@
+local json = require "json"
 local loveframes = require "loveframes"
 require "loveframes_ext"
 local devices = require "devices"
@@ -234,6 +235,74 @@ do
 	function DevicesList.update()
 		base:SetSize(280, love.graphics.getHeight())
 		base:SetPos(love.graphics.getWidth()-base.width, 0)
+	end
+end
+
+do
+	local OpenSavesMenu = {}
+	menus.OpenSavesMenu = OpenSavesMenu
+	local base = loveframes.Create("button")
+	OpenSavesMenu.base = base
+
+	base:SetSize(74, 70)
+	base:SetText("")
+	base:SetImage(GetImage("imgs/save and load.png"))
+
+	function base:OnClick()
+		menus.SavesMenu.base:SetVisible(not menus.SavesMenu.base.visible)
+	end
+
+	function OpenSavesMenu.update()
+		base:SetPos((love.graphics.getWidth() - base.width) / 2, 5)
+	end
+end
+
+do
+	local SavesMenu = {}
+	menus.SavesMenu = SavesMenu
+	local base = loveframes.Create("frame")
+	SavesMenu.base = base
+
+	local padding = 2
+
+	base:SetSize(350, 480)
+	base:SetName("Save and Load")
+	base:SetResizable(false)
+	base:SetDraggable(false)
+
+	function base:OnClose()
+		base:SetVisible(false)
+		return false
+	end
+
+	local SavePanel = loveframes.Create("panel", base)
+	local SaveNameEdit = loveframes.Create("textinput", SavePanel)
+	SaveNameEdit:SetText("save")
+	local SaveButton = loveframes.Create("button", SavePanel)
+	SaveButton:SetText("Save")
+
+	function SaveButton:OnClick()
+		local saveName = "save_" .. SaveNameEdit:GetText() .. ".json"
+		local saveMap = LoadedMap:jsonify()
+		local saveMapStr = json.encode(saveMap)
+		love.filesystem.write(saveName, saveMapStr)
+	end
+
+	-- TODO: list of saves (beings with `save_` ends with `.json`)
+	--       a load button to load the selected save
+	--       and finally a refresh button to refresh the list of saves
+
+	function SavesMenu.update()
+		base:SetPos((love.graphics.getWidth() - base.width) / 2, (love.graphics.getHeight() - base.height) / 2)
+
+		SavePanel:SetSize(base.width-(padding*2), 28)
+		SavePanel:SetPos(padding, 24 + padding)
+
+		SaveNameEdit:SetSize(SavePanel.width-50-padding, SavePanel.height)
+		SaveNameEdit:SetPos(0, 0)
+
+		SaveButton:SetSize(50, SavePanel.height)
+		SaveButton:SetPos(SavePanel.width-50, 0)
 	end
 end
 

@@ -1,3 +1,10 @@
+local devices = require "devices"
+local devicesNameLookup = {}
+for _, device in pairs(devices) do
+	devicesNameLookup[device.name] = device
+end
+
+
 ---@class MapObject
 local MapObject = {
 	-- NOTE: a device is just an 'extension' of this (Technically its the other way round in code)
@@ -18,6 +25,25 @@ function MapObject.new(x, y, device)
 
 	for i, v in pairs(self.fields) do
 		v.value = v.default
+		v.parent = self
+	end
+	return self
+end
+function MapObject.newFromSave(device, save)
+	local self = setmetatable(DeepCopy(device), MapObject)
+	self.x = save.x or error("Missing field x on object save")
+	self.y = save.y or error("Missing field y on object save")
+	self.connections = save.connections or {}
+	self._device = device  -- just incase we need the original reference for comparison for example
+
+	for i, v in pairs(self.fields) do
+		v.value = v.default
+		v.parent = self
+	end
+	if save.fields ~= nil then
+		for i, v in pairs(save.fields) do
+			self.fields[i].value = v.value
+		end
 	end
 	return self
 end
@@ -29,11 +55,39 @@ local Map = {
 }
 Map.__index = Map
 ---@return Map
-function Map.new()
+function Map.new(save)
+	local objects = {}
+	if save ~= nil then
+		if save.objects ~= nil then
+			for i, v in ipairs(save.objects) do
+				local device = devicesNameLookup[v.name]
+				if device == nil then
+					error("Failed to find device with name " .. tostring(v.name))
+				end
+				objects[i] = MapObject.newFromSave(device, v)
+			end
+		end
+		-- make obj.connections references to objects instead of numbers again
+		-- also run obj.loadFromSave if exists
+		for objI, obj in pairs(objects) do
+			for i, connectionObjIndex in pairs(obj.connections) do
+				obj.connections[i] = objects[connectionObjIndex]
+			end
+			if obj.loadFromSave ~= nil then
+				obj:loadFromSave(save.objects[objI])
+			end
+		end
+	end
 	local self = setmetatable({
-		objects={}
+		objects=objects
 	}, Map)
 	return self
+end
+
+function Map:jsonify()
+	return {
+		objects=jsonify_auto(self.objects)
+	}
 end
 
 ---@param x number

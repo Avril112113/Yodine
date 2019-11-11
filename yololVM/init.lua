@@ -322,6 +322,25 @@ function vm.new(chip, initialLines)
 	}, vm)
 	return self
 end
+function vm.newFromSave(chip, save)
+	local self = setmetatable({
+		chip=chip,
+		lines={},
+		errors={},
+
+		variables=save.variables or {},
+		line=save.line or 1
+	}, vm)
+	return self
+end
+function vm:jsonify()
+	return {
+		lines=self.lines,
+
+		variables=self.variables,
+		line=self.line
+	}
+end
 
 ---@param errTbl VM_ErrMsg
 function vm:pushError(errTbl)

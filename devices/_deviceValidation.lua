@@ -34,8 +34,19 @@ local function validateField(field, otherFieldname, deviceName)
 	elseif type(field.default) ~= "string" and type(field.default) ~= "number" then
 		error("field " .. field.name .. " of " .. deviceName .. " is missing a 'default' field of the type string or number.")
 	end
+	if field.jsonify == nil then
+		function field:jsonify()
+			return {
+				value=self.value
+			}
+		end
+	end
 end
 
+local jsonifyBlacklistedIndices = {
+	desc=true,
+	_device=true
+}
 local function validateDevice(device)
 	if type(device.name) ~= "string" then
 		error("<NO_NAME> is missing a 'name' field of the type string.")
@@ -47,6 +58,38 @@ local function validateDevice(device)
 	end
 	for i, v in pairs(device.fields) do
 		validateField(v, i, device.name)
+	end
+	if device.jsonify == nil then
+		function device:jsonify()
+			local objectsIndexLookup = {}
+			for i, v in pairs(LoadedMap.objects) do
+				objectsIndexLookup[v] = i
+			end
+
+			local new = {}
+			for i, v in pairs(self) do
+				if jsonifyBlacklistedIndices[i] then
+					-- we don't want to jsonify these
+				elseif i == "connections" then
+					local connections = {}
+					new[i] = connections
+					for _, device in pairs(v) do
+						table.insert(connections, objectsIndexLookup[device])
+					end
+				elseif type(v) == "table" then
+					if v.jsonify then
+						new[i] = v:jsonify()
+					else
+						new[i] = jsonify_auto(v)
+					end
+				elseif type(v) == "function" then
+					-- we cant jsonify a function
+				else
+					new[i] = v
+				end
+			end
+			return new
+		end
 	end
 end
 

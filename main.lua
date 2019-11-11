@@ -14,14 +14,18 @@ local background
 
 local loveframes = require "loveframes"
 local camera = require "camera"
+local json = require "json"
 
 -- local yolol = require "yolol"
 local menus = require "menus"
--- local devices = require "devices"
+local devices = require "devices"
 local Map = require "Map"
 
 
 LoadedMap = Map.new()
+
+-- LoadedMap:createObject(0, 0, devices.chip)
+
 
 -- Variables
 CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
@@ -303,6 +307,14 @@ function love.keypressed(key, isrepeat)
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
+	elseif key == "s" then
+		local saveMap = LoadedMap:jsonify()
+		local saveMapStr = json.encode(saveMap)
+		love.filesystem.write("save.json", saveMapStr)
+	elseif key == "l" then
+		local saveMapStr = love.filesystem.read("save.json")
+		local saveMap = json.decode(saveMapStr)
+		LoadedMap = Map.new(saveMap)
 	end
 end
 function love.keyreleased(key)
@@ -321,6 +333,8 @@ function love.resize()
 	genBackgroundImage()
 
 	for _, menu in pairs(menus) do
-		menu.update()
+		if menu.update then
+			menu.update()
+		end
 	end
 end

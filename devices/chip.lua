@@ -99,7 +99,7 @@ function chip:codeChanged(ln)
 			self:codeChanged(i)
 		end
 	elseif self.lines[ln] == nil then
-		error("schip:codeChanged() on invalid line " .. tostring(ln))
+		error("chip:codeChanged() on invalid line " .. tostring(ln))
 	else
 		self.vm.lines[ln] = yolol.parseLine(self.lines[ln])
 	end
@@ -113,7 +113,16 @@ function chip:init()
 	end
 	self:codeChanged()
 end
+function chip:loadFromSave(save)
+	self.vm = vm.newFromSave(self, save.vm)
+	self.lines = save.lines
+	self:codeChanged()
+end
 function chip:draw(opened)
+	if self.vm ~= nil then
+		print(self.vm.variables.a)
+	end
+
 	if opened ~= true then
 		love.graphics.scale(self:getScale())
 	end
