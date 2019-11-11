@@ -15,7 +15,7 @@ local background
 local loveframes = require "loveframes"
 local camera = require "camera"
 
-local yolol = require "yolol"
+-- local yolol = require "yolol"
 local menus = require "menus"
 -- local devices = require "devices"
 local Map = require "Map"
@@ -25,6 +25,16 @@ LoadedMap = Map.new()
 
 -- Variables
 CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
+SelectedDevices = setmetatable({}, {
+	__newindex=function(self, index, value)
+		rawset(self, index, value)
+		if index == 1 then
+			menus.DeviceInfo.setDevice(value)
+		end
+	end
+})
+local dragSelectionPosition
+local isMovingSelection = false
 
 
 function SetCenterDrawObject(obj)
@@ -113,6 +123,22 @@ function love.draw()
 				end
 			love.graphics.pop()
 		end
+
+		love.graphics.setColor(1, 0.5, 0, 0.8)
+		love.graphics.setLineWidth(3)
+		love.graphics.setLineStyle("smooth")
+		for _, device in ipairs(SelectedDevices) do
+			love.graphics.rectangle("line", device.x, device.y, device:getSize())
+		end
+
+		love.graphics.setColor(0.9, 0.9, 0.9, 0.8)
+		love.graphics.setLineWidth(3)
+		love.graphics.setLineStyle("smooth")
+		if dragSelectionPosition ~= nil then
+			local x, y = dragSelectionPosition[1], dragSelectionPosition[2]
+			local mwx, mwy = camera:mousePosition()
+			love.graphics.rectangle("line", x, y, mwx-x, mwy-y)
+		end
 	camera:unset()
 
 	if CenterDrawObject ~= nil and CenterDrawObject.drawGUI ~= nil and CenterDrawObject.getSizeGUI ~= nil then
@@ -182,19 +208,66 @@ function love.mousepressed(x, y, button)
 	elseif button == 1 then
 		if has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
 			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
-			return
-		elseif obj then
-			menus.DeviceInfo.setDevice(obj)
+		elseif obj == nil then
+			if not love.keyboard.isDown("lctrl") then
+				for i, _ in pairs(SelectedDevices) do
+					SelectedDevices[i] = nil
+				end
+			end
+			dragSelectionPosition = {worldX, worldY}
+		elseif obj ~= nil then
+			if love.keyboard.isDown("lctrl") then
+				SelectedDevices[#SelectedDevices+1] = obj
+			else
+				for i, _ in pairs(SelectedDevices) do
+					SelectedDevices[i] = nil
+				end
+				SelectedDevices[1] = obj
+			end
 			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
 			end
-		else
-			menus.DeviceInfo.setDevice(obj)
+			isMovingSelection = true
 		end
 	end
 end
 function love.mousereleased(x, y, button)
 	loveframes.mousereleased(x, y, button)
+
+	if button == 1 then
+		if isMovingSelection then
+			isMovingSelection = false
+		elseif dragSelectionPosition ~= nil then
+			local x1, y1 = dragSelectionPosition[1], dragSelectionPosition[2]
+			local x2, y2 = camera:mousePosition()
+			if x2 < x1 then
+				local t = x2
+				x2 = x1
+				x1 = t
+			end
+			if y2 < y1 then
+				local t = y2
+				y2 = y1
+				y1 = t
+			end
+			dragSelectionPosition = nil
+			for _, obj in pairs(LoadedMap.objects) do
+				local objW, objH = obj:getSize()
+				if obj.x > x1-objW and obj.y > y1-objH and obj.x+objW < x2+objW and obj.y+objH < y2+objH then
+					SelectedDevices[#SelectedDevices+1] = obj
+				end
+			end
+		end
+	end
+end
+
+function love.mousemoved(x, y, dx, dy)
+	if isMovingSelection then
+		for _, v in ipairs(SelectedDevices) do
+			v.x = v.x + dx
+			v.y = v.y + dy
+		end
+	end
 end
 
 function love.wheelmoved(x, y)
@@ -209,10 +282,19 @@ function love.keypressed(key, isrepeat)
 	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
 		CenterDrawObject:keypressedGUI(key)
 	elseif loveframes.collisioncount <= 0 and (key == "delete" or key == "x") then
-		local worldX, worldY = camera:mousePosition()
-		local obj = LoadedMap:getObjectAt(worldX, worldY)
-
-		LoadedMap:removeObject(obj)
+		if #SelectedDevices <= 0 then
+			local obj = LoadedMap:getObjectAt(camera:mousePosition())
+			SelectedDevices[1] = obj
+		end
+		for _, v in ipairs(SelectedDevices) do
+			if menus.DeviceInfo.device == v then
+				menus.DeviceInfo.setDevice(nil)
+			end
+			LoadedMap:removeObject(v)
+		end
+		for i, _ in pairs(SelectedDevices) do
+			SelectedDevices[i] = nil
+		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
 	end

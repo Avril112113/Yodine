@@ -17,10 +17,11 @@ Until this project is at a more usable state it might be quite messy, Sorry.
 
 # Shortcuts/Keyboard/Controls
 Drag with `RMB` to move camera  
-Drag with `LMB` to select multiple devices (**TODO!**)  
-Drag with `LMB` on selected device\[s\] to move them (**TODO!**)  
-Click with `LMB` on a device to select single device (**TODO!**)  
-`Delete` or `X` will remove the device under the cursor  
+Drag with `LMB` to select multiple devices  
+Drag with `LMB` on selected device\[s\] to move them  
+Click with `LMB` on a device to select single device  
+`Ctrl` + `LMB` on a device to add device to selection  
+`Delete` or `X` will remove selected devices, if no devices selected then removes device under cursor  
 
 # grammar.relabel
 When editing the grammar i made a vscode extension for fancy colors  
