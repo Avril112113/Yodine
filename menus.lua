@@ -1,6 +1,5 @@
 local json = require "json"
 local loveframes = require "loveframes"
-require "loveframes_ext"
 local devices = require "devices"
 local Map = require "Map"
 
