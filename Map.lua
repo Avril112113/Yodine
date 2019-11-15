@@ -51,7 +51,8 @@ end
 ---@class Map
 local Map = {
 	---@type MapObject[]
-	objects=nil
+	objects=nil,
+	hasModification=false
 }
 Map.__index = Map
 ---@return Map
@@ -79,7 +80,8 @@ function Map.new(save)
 		end
 	end
 	local self = setmetatable({
-		objects=objects
+		objects=objects,
+		hasModification=false
 	}, Map)
 	return self
 end
@@ -99,6 +101,7 @@ function Map:createObject(x, y, device)
 		obj:init()
 	end
 	table.insert(self.objects, obj)
+	self.hasModification = true
 	return obj
 end
 
@@ -110,6 +113,7 @@ function Map:removeObject(obj)
 			return true
 		end
 	end
+	self.hasModification = true
 	return false
 end
 

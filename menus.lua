@@ -296,6 +296,7 @@ do
 		local saveMapStr = json.encode(saveMap)
 		love.filesystem.write(saveName, saveMapStr)
 		SavesMenu.refreshSavesList()
+		LoadedMap.hasModification = false
 	end
 
 	local SavesList = loveframes.Create("list", base)
@@ -306,9 +307,8 @@ do
 
 	function LoadSaveButton:OnClick()
 		if selectedSave ~= nil and love.filesystem.getInfo(selectedSave).type == "file" then
-			if #LoadedMap.objects > 0 then
+			if #LoadedMap.objects > 0 and LoadedMap.hasModification == true then
 				local saveName = "save_autosave " .. os.date():gsub("/", "_"):gsub(":", ".") .. ".json"
-				print(saveName)
 				local saveMap = LoadedMap:jsonify()
 				local saveMapStr = json.encode(saveMap)
 				love.filesystem.write(saveName, saveMapStr)
