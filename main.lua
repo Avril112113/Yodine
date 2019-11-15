@@ -18,12 +18,12 @@ local json = require "json"
 
 -- local yolol = require "yolol"
 local menus = require "menus"
-local devices = require "devices"
 local Map = require "Map"
 
 
 LoadedMap = Map.new()
 
+-- local devices = require "devices"
 -- LoadedMap:createObject(0, 0, devices.chip)
 
 

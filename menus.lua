@@ -265,6 +265,7 @@ do
 
 	local padding = 2
 
+	-- base:SetVisible(false)
 	base:SetSize(350, 480)
 	base:SetName("Save and Load")
 	base:SetResizable(false)
@@ -292,6 +293,9 @@ do
 
 	function SaveButton:OnClick()
 		local saveName = "save_" .. SaveNameEdit:GetText() .. ".json"
+		if love.filesystem.getInfo(saveName) ~= nil then
+			love.filesystem.write("save_" .. SaveNameEdit:GetText() .. ".old " .. os.date():gsub("/", "_"):gsub(":", ".") .. ".json", love.filesystem.read(saveName))
+		end
 		local saveMap = LoadedMap:jsonify()
 		local saveMapStr = json.encode(saveMap)
 		love.filesystem.write(saveName, saveMapStr)
@@ -330,6 +334,7 @@ do
 				button.groupIndex = 1
 				function button:OnClick()
 					selectedSave = path
+					SaveNameEdit:SetText(path:sub(6, #path-5))
 				end
 				SavesList:AddItem(button)
 			end
@@ -356,6 +361,42 @@ do
 		SavesList:SetPos(padding, 28+SavePanel.y+SavePanel.height+padding)
 	end
 end
+
+-- do
+-- 	local SavesOverrideConfirm = {}
+-- 	menus.SavesOverrideConfirm = SavesOverrideConfirm
+-- 	local base = loveframes.Create("frame")
+-- 	SavesOverrideConfirm.base = base
+
+-- 	base:SetVisible(false)
+-- 	base:SetName("Save Confirmation")
+-- 	base:SetSize(280, 100)
+
+-- 	local Text = loveframes.Create("text", base)
+-- 	Text:SetText {
+-- 		{font=SavesOverrideConfirm.font, color=textColor}, "Are you sure you want to override the save?"
+-- 	}
+
+-- 	local CancelButton = loveframes.Create("button", base)
+-- 	CancelButton:SetText("Cancel")
+-- 	CancelButton:SetSize()
+
+-- 	local ConfirmButton = loveframes.Create("button", base)
+-- 	ConfirmButton:SetText("Confirm")
+
+-- 	function SavesOverrideConfirm.update()
+-- 		base:SetPos((love.graphics.getWidth() - base.width) / 2, (love.graphics.getHeight() - base.height) / 2)
+
+-- 		CancelButton:SetSize(80, 20)
+-- 		CancelButton:SetPos(5, base.height-CancelButton.height-5)
+
+-- 		ConfirmButton:SetSize(CancelButton.width, CancelButton.height)
+-- 		ConfirmButton:SetPos(base.width-ConfirmButton.width-5, base.height-ConfirmButton.height-5)
+
+-- 		Text:SetSize(base.width, base.height - CancelButton.height)
+-- 		Text:SetPos(5, 28)
+-- 	end
+-- end
 
 
 return menus
