@@ -48,8 +48,11 @@ local chip = {
 	},
 
 	-- Drawing
+	---@type number
 	lineWidth=(GetFont():getHeight()+4)*40,
+	---@type number
 	lineHeight=GetFont():getHeight()+4,
+	---@type number
 	rightPanelWidth=BackgroundCellSize*6,
 
 	-- Editor
@@ -59,9 +62,13 @@ local chip = {
 	line=1,
 	---@type number
 	column=0,
+	---@type number
+	maxCharsPerLine=70,
 
 	-- Other
+	---@type number
 	vmStepTimePass=0,
+	---@type number
 	vmStepInterval=0.2
 }
 
@@ -226,7 +233,7 @@ function chip:draw(opened)
 		love.graphics.rectangle("fill", self.lineWidth, pauseButtonY, self.rightPanelWidth, self.rightPanelWidth)
 		love.graphics.setColor(1, 1, 1, 1)
 		local tw = self.rightPanelWidth
-		local thw = tw/2
+		-- local thw = tw/2
 		local tfw = tw/6
 		love.graphics.rectangle("fill", self.lineWidth+tfw, pauseButtonY+tfw, tfw, tw-(tfw*2))
 		love.graphics.rectangle("fill", self.lineWidth+tw-(tfw*2), pauseButtonY+tfw, tfw, tw-(tfw*2))
@@ -338,9 +345,12 @@ function chip:keypressedGUI(key)
 	end
 end
 function chip:textinputGUI(text)
-	self.lines[self.line] = self.lines[self.line]:sub(1, self.column) .. text .. self.lines[self.line]:sub(self.column+1, #self.lines[self.line])
-	self.column = self.column + #text
-	self:codeChanged(self.line)
+	local newLine = self.lines[self.line]:sub(1, self.column) .. text .. self.lines[self.line]:sub(self.column+1, #self.lines[self.line])
+	if #newLine <= chip.maxCharsPerLine then
+		self.lines[self.line] = newLine
+		self.column = self.column + #text
+		self:codeChanged(self.line)
+	end
 end
 
 function chip:update(dt)
