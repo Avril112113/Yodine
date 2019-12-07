@@ -34,18 +34,18 @@ local dragSelectionPosition
 local isMovingSelection = false
 local hasMovedSelection = false
 
-local function addSelectedDevice(device)
+function AddSelectedDevice(device)
 	if device == nil then return end
 	SelectedDevices[device] = device
 	menus.DeviceInfo.setDevice(device)
 end
-local function removeSelectedDevice(device)
+function RemoveSelectedDevice(device)
 	SelectedDevices[device] = nil
 	if menus.DeviceInfo.device == device then
 		menus.DeviceInfo.setDevice(nil)
 	end
 end
-local function clearSelectedDevices()
+function ClearSelectedDevices()
 	SelectedDevices = {}
 	menus.DeviceInfo.setDevice(nil)
 end
@@ -224,11 +224,11 @@ function love.mousepressed(x, y, button)
 			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
 		elseif obj == nil then
 			if not love.keyboard.isDown("lctrl") then
-				clearSelectedDevices()
+				ClearSelectedDevices()
 			end
 			dragSelectionPosition = {worldX, worldY}
 		elseif obj ~= nil then
-			addSelectedDevice(obj)
+			AddSelectedDevice(obj)
 
 			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
@@ -248,8 +248,8 @@ function love.mousereleased(x, y, button)
 			if not hasMovedSelection and not love.keyboard.isDown("lctrl") then
 				local worldX, worldY = camera:cameraPosition(x, y)
 				local obj = LoadedMap:getObjectAt(worldX, worldY)
-				clearSelectedDevices()
-				addSelectedDevice(obj)
+				ClearSelectedDevices()
+				AddSelectedDevice(obj)
 			end
 		elseif dragSelectionPosition ~= nil then
 			local x1, y1 = dragSelectionPosition[1], dragSelectionPosition[2]
@@ -268,7 +268,7 @@ function love.mousereleased(x, y, button)
 			for _, obj in pairs(LoadedMap.objects) do
 				local objW, objH = obj:getSize()
 				if obj.x > x1-objW and obj.y > y1-objH and obj.x+objW < x2+objW and obj.y+objH < y2+objH then
-					addSelectedDevice(obj)
+					AddSelectedDevice(obj)
 				end
 			end
 		end
@@ -299,22 +299,14 @@ function love.keypressed(key, isrepeat)
 	elseif loveframes.collisioncount <= 0 and (key == "delete" or key == "x") then
 		local isEmpty = true; for _, _ in pairs(SelectedDevices) do isEmpty = false break end
 		if isEmpty then
-			addSelectedDevice(LoadedMap:getObjectAt(camera:mousePosition()))
+			AddSelectedDevice(LoadedMap:getObjectAt(camera:mousePosition()))
 		end
 		for _, v in pairs(SelectedDevices) do
-			removeSelectedDevice(v)
+			RemoveSelectedDevice(v)
 			LoadedMap:removeObject(v)
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
-	elseif key == "s" then
-		local saveMap = LoadedMap:jsonify()
-		local saveMapStr = json.encode(saveMap)
-		love.filesystem.write("save.json", saveMapStr)
-	elseif key == "l" then
-		local saveMapStr = love.filesystem.read("save.json")
-		local saveMap = json.decode(saveMapStr)
-		LoadedMap = Map.new(saveMap)
 	end
 end
 function love.keyreleased(key)
