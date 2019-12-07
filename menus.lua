@@ -322,6 +322,7 @@ do
 			local saveMapStr = love.filesystem.read(selectedSave)
 			local saveMap = json.decode(saveMapStr)
 			LoadedMap = Map.new(saveMap)
+			ClearSelectedDevices()
 		end
 	end
 
