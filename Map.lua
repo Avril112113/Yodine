@@ -42,7 +42,9 @@ function MapObject.newFromSave(device, save)
 	end
 	if save.fields ~= nil then
 		for i, v in pairs(save.fields) do
-			self.fields[i].value = v.value
+			local field = self.fields[i]
+			field.name = v.name or field.name
+			field.value = v.value
 		end
 	end
 	return self

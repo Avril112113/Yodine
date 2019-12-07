@@ -1,4 +1,4 @@
--- Contains data validators and some functions to simplfy things
+-- Contains data validators and some functions to simplify things
 -- and some typing info
 
 -- Typing
@@ -37,6 +37,7 @@ local function validateField(field, otherFieldname, deviceName)
 	if field.jsonify == nil then
 		function field:jsonify()
 			return {
+				name=self.name,
 				value=self.value
 			}
 		end
@@ -73,8 +74,8 @@ local function validateDevice(device)
 				elseif i == "connections" then
 					local connections = {}
 					new[i] = connections
-					for _, device in pairs(v) do
-						table.insert(connections, objectsIndexLookup[device])
+					for _, obj in pairs(v) do
+						table.insert(connections, objectsIndexLookup[obj])
 					end
 				elseif type(v) == "table" then
 					if v.jsonify then
@@ -102,12 +103,12 @@ return {
 		if type(newValue) ~= "number" then
 			error(self.name .. " expected a number but got " .. type(newValue) .. " instead.")
 		end
-		return newValue
+		return self.value
 	end,
 	changed_anyString=function(self, newValue)
 		if type(newValue) ~= "string" then
 			error(self.name .. " expected a string but got " .. type(newValue) .. " instead.")
 		end
-		return newValue
+		return self.value
 	end
 }
