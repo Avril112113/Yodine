@@ -89,14 +89,6 @@ function table.serialize(_tbl)
 	return table.concat(str)
 end
 
-function jsonify_table(tbl)
-	local new = {}
-	for i, v in pairs(tbl) do
-		new[i] = v.jsonify()
-	end
-	return new
-end
-
 function jsonify_auto(tbl)
 	local new = {}
 	for i, v in pairs(tbl) do
