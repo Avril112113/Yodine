@@ -108,6 +108,9 @@ function chip:codeChanged(ln)
 	elseif self.lines[ln] == nil then
 		error("chip:codeChanged() on invalid line " .. tostring(ln))
 	else
+		if #self.lines[ln] > self.maxCharsPerLine then
+			self.lines[ln] = self.lines[ln]:sub(1, self.maxCharsPerLine)
+		end
 		self.vm.lines[ln] = yolol.parseLine(self.lines[ln])
 	end
 end
@@ -342,8 +345,30 @@ function chip:keypressedGUI(key)
 			self:checkColumn(false)
 		end
 		self:codeChanged(self.line)
+	elseif key == "v" and love.keyboard.isDown("lctrl") then
+		local clipboard = love.system.getClipboardText()
+		local lines = {}; for s in clipboard:gmatch("[^\r\n]+") do table.insert(lines, s) end
+
+		for line, text in ipairs(lines) do
+			text = text:gsub("\t", "    ")
+			line = line + self.line - 1
+			local column = 0
+			if self.line == line then
+				column = self.column
+				self.column = self.column + #text
+				self:checkColumn()
+			end
+			local newLine = self.lines[line]:sub(1, column) .. text .. self.lines[line]:sub(column+1, #self.lines[line])
+			self.lines[line] = newLine
+			self:codeChanged(line)
+		end
 	end
 end
+--[[
+:a = 0
+:b = 1
+:c = 2
+]]
 function chip:textinputGUI(text)
 	local newLine = self.lines[self.line]:sub(1, self.column) .. text .. self.lines[self.line]:sub(self.column+1, #self.lines[self.line])
 	if #newLine <= chip.maxCharsPerLine then
