@@ -3,9 +3,7 @@ local re = require "relabel"
 local precedence = require "yolol.precedence"
 
 local grammarPath = "yolol/grammar.relabel"
-local grammarFile = io.open(grammarPath, "r")
-local grammarStr = grammarFile:read("*a")
-grammarFile:close()
+local grammar = love.filesystem.read(grammarPath)
 
 local errors
 
@@ -303,7 +301,7 @@ local defs = {
 		}
 	end,
 }
-local grammar = re.compile(grammarStr, defs)
+local grammar = re.compile(grammar, defs)
 
 ---@param lineCode string
 ---@return YAST_Line,table
