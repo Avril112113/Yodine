@@ -81,15 +81,6 @@ do
 				FieldNameEdit:SetSize(DeviceFields:GetCellWidth(), DeviceFields:GetCellHeight())
 				FieldNameEdit:SetText(field.name)
 				local newName
-				function FieldNameEdit:OnEnter()
-					if newName ~= nil then
-						if newName ~= nil then
-							field.name = newName
-							newName = nil
-						end
-						FieldNameEdit:SetText(field.name)
-					end
-				end
 				local function setNewName()
 					if newName ~= nil then
 						field.name = newName
@@ -97,12 +88,8 @@ do
 					end
 					FieldNameEdit:SetText(field.name)
 				end
-				function FieldNameEdit:Update(dt)
-					if FieldNameEdit:GetFocus() then
-						newName = FieldNameEdit:GetText()
-					else
-						setNewName()
-					end
+				function FieldNameEdit:OnEnter()
+					setNewName()
 				end
 				function FieldNameEdit:Update(dt)
 					if FieldNameEdit:GetFocus() then
@@ -118,37 +105,21 @@ do
 				FieldValueEdit:SetSize(DeviceFields:GetCellWidth(), DeviceFields:GetCellHeight())
 				FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
 				local newValue
-				function FieldValueEdit:OnEnter()
-					if newValue ~= nil then
-						if newValue:sub(1, 1) == "\"" then
-							field.value = newValue:gsub("^\"", ""):gsub("\"$", "")
-						else
-							field.value = tonumber(newValue)
-						end
-						newValue = nil
-						FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
-					end
-				end
 				local function setNewValue()
 					if newValue ~= nil then
 						if tonumber(newValue) ~= nil then
-							field.value = tonumber(newValue)
+							LoadedMap:changeField(device, field.name, tonumber(newValue))
 						elseif newValue == "" then
-							field.value = field.default
+							LoadedMap:changeField(device, field.name, field.default)
 						else
-							field.value = newValue:gsub("^\"", ""):gsub("\"$", "")
+							LoadedMap:changeField(device, field.name, newValue:gsub("^\"", ""):gsub("\"$", ""))
 						end
 						newValue = nil
 					end
 					FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
 				end
-				function FieldValueEdit:Update(dt)
-					if FieldValueEdit:GetFocus() then
-						local text = FieldValueEdit:GetText()
-						newValue = text
-					else
-						setNewValue()
-					end
+				function FieldValueEdit:OnEnter()
+					setNewValue()
 				end
 				function FieldValueEdit:Update(dt)
 					if FieldValueEdit:GetFocus() then
