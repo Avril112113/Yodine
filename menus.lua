@@ -2,6 +2,7 @@ local json = require "json"
 local loveframes = require "loveframes"
 local devices = require "devices"
 local Map = require "Map"
+local saves_system = require "saves_system"
 
 
 -- Patch terrible text colors
@@ -260,7 +261,6 @@ do
 	local padding = 2
 
 	-- base:SetVisible(false)
-	base:SetSize(350, 480)
 	base:SetName("Save and Load")
 	base:SetResizable(false)
 	base:SetDraggable(false)
@@ -270,9 +270,7 @@ do
 		return false
 	end
 
-	local SavePanel = loveframes.Create("panel", base)
-
-	local SaveNameEdit = loveframes.Create("textinput", SavePanel)
+	local SaveNameEdit = loveframes.Create("textinput", base)
 	SaveNameEdit:SetText("save")
 
 	function SaveNameEdit:Update()
@@ -282,19 +280,13 @@ do
 		end
 	end
 
-	local SaveButton = loveframes.Create("button", SavePanel)
+	local SaveButton = loveframes.Create("button", base)
 	SaveButton:SetText("Save")
 
 	function SaveButton:OnClick()
-		local saveName = "save_" .. SaveNameEdit:GetText() .. ".json"
-		if love.filesystem.getInfo(saveName) ~= nil then
-			love.filesystem.write("save_" .. SaveNameEdit:GetText() .. ".old " .. os.date():gsub("/", "_"):gsub(":", ".") .. ".json", love.filesystem.read(saveName))
-		end
-		local saveMap = LoadedMap:jsonify()
-		local saveMapStr = json.encode(saveMap)
-		love.filesystem.write(saveName, saveMapStr)
-		SavesMenu.refreshSavesList()
+		saves_system.save(LoadedMap, SaveNameEdit:GetText())
 		LoadedMap.hasModification = false
+		SavesMenu.refreshSavesList()
 	end
 
 	local SavesList = loveframes.Create("list", base)
@@ -304,56 +296,62 @@ do
 	local selectedSave
 
 	function LoadSaveButton:OnClick()
-		if selectedSave ~= nil and love.filesystem.getInfo(selectedSave).type == "file" then
-			if #LoadedMap.objects > 0 and LoadedMap.hasModification == true then
-				local saveName = "save_autosave " .. os.date():gsub("/", "_"):gsub(":", ".") .. ".json"
-				local saveMap = LoadedMap:jsonify()
-				local saveMapStr = json.encode(saveMap)
-				love.filesystem.write(saveName, saveMapStr)
+		if selectedSave ~= nil then
+			local loadedMap = saves_system.load(selectedSave)
+			if loadedMap ~= nil then
+				LoadedMap = loadedMap
+				ClearSelectedDevices()
+				base:SetVisible(false)
+			else
 				SavesMenu.refreshSavesList()
 			end
-
-			local saveMapStr = love.filesystem.read(selectedSave)
-			local saveMap = json.decode(saveMapStr)
-			LoadedMap = Map.new(saveMap)
-			ClearSelectedDevices()
 		end
 	end
 
 	function SavesMenu.refreshSavesList()
 		SavesList:Clear()
-		for _, path in pairs(love.filesystem.getDirectoryItems("/")) do
-			if path:sub(1, 5) == "save_" and path:sub(#path-4, #path) == ".json" then
-				local button = loveframes.Create("button")
-				button:SetText(path:sub(6, #path-5))
-				button.groupIndex = 1
-				function button:OnClick()
-					selectedSave = path
-					SaveNameEdit:SetText(path:sub(6, #path-5))
-				end
-				SavesList:AddItem(button)
+		for _, save in ipairs(saves_system.fetch_save_list()) do
+			local button = loveframes.Create("button")
+			button:SetText(save.name)
+			button.groupIndex = 1
+			function button:OnClick()
+				selectedSave = save
+				SaveNameEdit:SetText(save.name)
 			end
+			SavesList:AddItem(button)
 		end
 	end
 	SavesMenu.refreshSavesList()
 
+	local ShowInFileBrowser = loveframes.Create("button", base)
+	ShowInFileBrowser:SetText("Show In File Browser")
+	function ShowInFileBrowser:OnClick()
+		local path = "file://"..love.filesystem.getSaveDirectory()
+		if selectedSave ~= nil then
+			path = path .. "/" .. selectedSave.dir
+		end
+		love.system.openURL(path)
+	end
+
 	function SavesMenu.update()
-		base:SetPos((love.graphics.getWidth() - base.width) / 2, (love.graphics.getHeight() - base.height) / 2)
+		local width = 350
+		local base_frame_height = 25
 
-		SavePanel:SetSize(base.width-(padding*2), 28)
-		SavePanel:SetPos(padding, 24 + padding)
+		SaveNameEdit:SetSize(width-padding-50, 25)
+		SaveNameEdit:SetPos(padding, padding + base_frame_height)
+		SaveButton:SetSize(50-padding, SaveNameEdit.height)
+		SaveButton:SetPos(padding + SaveNameEdit.staticx + SaveNameEdit.width, padding + base_frame_height)
 
-		SaveNameEdit:SetSize(SavePanel.width-50-padding, SavePanel.height)
-		SaveNameEdit:SetPos(0, 0)
+		SavesList:SetSize(width-padding, 400)
+		SavesList:SetPos(padding, padding + SaveNameEdit.staticy + SaveNameEdit.height)
 
-		SaveButton:SetSize(50, SavePanel.height)
-		SaveButton:SetPos(SavePanel.width-50, 0)
+		LoadSaveButton:SetSize(width/2-padding, 28)
+		LoadSaveButton:SetPos(padding, padding + SavesList.staticy + SavesList.height)
+		ShowInFileBrowser:SetSize(width/2-padding, 28)
+		ShowInFileBrowser:SetPos(padding + width/2, padding + SavesList.staticy + SavesList.height)
 
-		SavesList:SetSize(base.width-(padding*2), base.height-SavePanel.height-(padding*4)-LoadSaveButton.height-28)
-		SavesList:SetPos(padding, SavePanel.height+SaveButton.height+padding)
-
-		LoadSaveButton:SetSize(base.width-(padding*2), 28)
-		LoadSaveButton:SetPos(padding, base.height-LoadSaveButton.height-padding)
+		base:SetSize(ShowInFileBrowser.staticx + ShowInFileBrowser.width + padding, ShowInFileBrowser.staticy + ShowInFileBrowser.height + padding)
+		base:SetPos((love.graphics.getWidth() - width) / 2, (love.graphics.getHeight() - base.height) / 2)
 	end
 end
 
