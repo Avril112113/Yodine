@@ -1,11 +1,11 @@
 package.path = "libs/?.lua;libs/?/init.lua;" .. package.path
 
-local rpc = require "rpc"
+local lsp = require "lsp"
 
-rpc.start_server()
+lsp.start_server()
 
-while rpc.get_server() ~= nil do
-	rpc.update()
+while lsp.get_server() ~= nil do
+	lsp.update()
 end
 
 print("Exit.")
