@@ -1,5 +1,5 @@
 function love.conf(t)
-    t.identity = "yololDataNetworkEmulator"
+    t.identity = "Yodine"
     t.appendidentity = false
     t.version = "11.0"
     t.console = true
@@ -9,7 +9,7 @@ function love.conf(t)
 
     t.audio.mixwithsystem = true
 
-    t.window.title = "Yolol Data Network Emulator"
+    t.window.title = "Yodine"
     t.window.icon = nil
     t.window.width = 1200
     t.window.height = 1000
