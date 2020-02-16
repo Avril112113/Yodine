@@ -24,11 +24,11 @@ local Device = {
 }
 
 
-local function validateField(field, otherFieldname, deviceName)
-	local otherFieldname = otherFieldname or "<NO_NAME>"
+local function validateField(field, otherFieldName, deviceName)
+	local otherFieldName = otherFieldName or "<NO_NAME>"
 	local deviceName = deviceName or "<NO_NAME>"
 	if type(field.name) ~= "string" then
-		error("field " .. otherFieldname .. " of " .. deviceName .. " is missing a 'name' field of the type string.")
+		error("field " .. otherFieldName .. " of " .. deviceName .. " is missing a 'name' field of the type string.")
 	elseif type(field.desc) ~= "string" then
 		print("field " .. field.name .. " of " .. deviceName .. " is missing a 'desc' field of the type string.")
 	elseif type(field.default) ~= "string" and type(field.default) ~= "number" then
@@ -46,7 +46,9 @@ end
 
 local jsonifyBlacklistedIndices = {
 	desc=true,
-	_device=true
+	_device=true,
+	map=true,
+	name=true
 }
 local function validateDevice(device)
 	if type(device.name) ~= "string" then
