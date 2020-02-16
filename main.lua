@@ -1,5 +1,11 @@
-package.path = "libs/?.lua;libs/?/init.lua;" .. package.path
-package.cpath = "libs/?.dll;" .. package.cpath
+if love.filesystem.isFused() then
+	love.filesystem.mount(love.filesystem.getSourceBaseDirectory(), "", true)
+end
+love.filesystem.setRequirePath("libs/?.lua;libs/?/init.lua;" .. love.filesystem.getRequirePath())
+love.filesystem.setCRequirePath("libs/??;" .. love.filesystem.getCRequirePath())
+package.path = ""
+package.cpath = ""
+
 
 -- require "test"
 -- require "test_rpc"
@@ -8,7 +14,7 @@ require "utils"  -- provides a set of global functions
 -- Constant's and defining locals
 BackgroundCellSize = 20
 DefaultFont = GetFont()
-Consola = love.graphics.newFont("fonts/Consola.ttf")
+Consola = love.graphics.newFont("fonts/consola.ttf")
 
 local background
 
