@@ -93,5 +93,7 @@ function button:clicked(x, y, button)
 	self.fields.buttonState.value = self.fields.buttonState.value == 1 and 0 or 1
 end
 
+-- TODO: ButtonStyle
+
 deviceValidation.validateDevice(button)
 return button
