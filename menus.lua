@@ -355,6 +355,9 @@ do
 		SaveButton:SetSize(50, SavePanel.height)
 		SaveButton:SetPos(SavePanel.width-50, 0)
 
+		SavesList:SetSize(base.width-(padding*2), base.height-SavePanel.height-(padding*4)-LoadSaveButton.height-28)
+		SavesList:SetPos(padding, SavePanel.height+SaveButton.height+padding)
+
 		LoadSaveButton:SetSize(base.width-(padding*2), 28)
 		LoadSaveButton:SetPos(padding, base.height-LoadSaveButton.height-padding)
 
