@@ -103,6 +103,12 @@ do
 					else
 						setNewName()
 					end
+				function FieldNameEdit:Update(dt)
+					if FieldNameEdit:GetFocus() then
+						newName = FieldNameEdit:GetText()
+					else
+						setNewName()
+				end
 				end
 				FieldNameEdit.OnFocusLost = function() setNewName() end
 				DeviceFields:AddItem(FieldNameEdit, row, 1)
@@ -135,6 +141,13 @@ do
 					end
 					FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
 				end
+				function FieldValueEdit:Update(dt)
+					if FieldValueEdit:GetFocus() then
+						local text = FieldValueEdit:GetText()
+						newValue = text
+					else
+						setNewValue()
+					end
 				function FieldValueEdit:Update(dt)
 					if FieldValueEdit:GetFocus() then
 						local text = FieldValueEdit:GetText()

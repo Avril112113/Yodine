@@ -2,113 +2,124 @@
 local json = require "json"
 local socket = require "socket"
 
-local SERVER_PORT = 32354
+
+local DEFAULT_PORT = 57082
+local DEBUG = true
 
 
-local notification_handlers = {}
-local pending_results = {}
-local id = 0
+local function str_table(tbl, indent, depth)
+	depth = depth or 0
+	indent = indent or "    "
+
+	local s = indent:rep(depth) .. "{"
+	for i, v in pairs(tbl) do
+		if type(v) == "table" then
+			s = s .. indent:rep(depth+1) .. str_table(v, indent, depth + 1)
+		else
+			s = s .. "\n" .. indent:rep(depth+1) .. tostring(i) .. " = " .. tostring(v) .. ","
+		end
+	end
+	return s .. "\n" .. indent:rep(depth) .. "}"
+end
+
+
+local coroutines = {}
+local function update()
+	for k, c in pairs(coroutines) do
+		-- Might want to add a time check using debug.sethook?
+		coroutine.resume(c)
+		if coroutine.status(c) == "dead" then
+			print("Encountered dead coroutine, cleaning it up. (was there an error? or did its not cleanup after its self?)")
+			coroutines[k] = nil
+		end
+	end
+end
+
+---@type tcp_socket
 local server
-local client
-
+local function create_coroutines()
+	local cs = coroutines
+	cs["accept"] = coroutine.create(function()
+		::server_loop::
+		local client, err = server:accept()
+		if err == "timeout" then
+			coroutine.yield()
+			goto server_loop
+		elseif err ~= nil then
+			print("Failed to accept client: " .. tostring(err))
+			coroutine.yield()
+			goto server_loop
+		else  -- client ~= nil
+			print("Setting up client: " .. tostring(client))
+			client:settimeout(0)
+			cs[client] = coroutine.create(function()
+				local ok, err = pcall(function()
+					::client_loop::
+					local content_line, err = client:receive("*l")
+					if err == "timeout" then
+						coroutine.yield()
+						goto client_loop
+					elseif err == "closed" then
+						cs[client] = nil
+						print("Client disconnected: " .. tostring(client))
+						return
+					elseif err ~= nil then
+						print("Got error wile receiving:", err)
+						coroutine.yield()
+						goto client_loop
+					end
+					local length = tonumber(content_line:sub(17))
+					local content_json, err = client:receive(length+2)
+					if err ~= nil then
+						print("Got error wile receiving (from length):", err)
+						coroutine.yield()
+						goto client_loop
+					end
+					content_json = content_json:sub(3)
+					if DEBUG then print("Received content:", content_json) end
+					local data = json.decode(content_json)
+					if type(data) ~= "table" then
+						print(json.decode(content_json))
+						print("Got malformed data...", data)
+					else
+						if DEBUG then print("Received content decoded:\n" .. str_table(data)) end
+					end
+					goto client_loop
+				end)
+				if not ok and err ~= nil then
+					print("Error while handling " .. tostring(client) .. ": ", err)
+					client:close()
+				end
+			end)
+		end
+		coroutine.yield()
+		goto server_loop
+	end)
+end
 local function start_server(ip, port)
-	ip = ip or "localhost"
-	port = port or SERVER_PORT
-	server = socket.bind(ip, port)
+	ip = ip or "*"
+	port = port or DEFAULT_PORT
+	---@type tcp_socket
+	server = assert(socket.bind(ip, port))
+	server:settimeout(0)
+	create_coroutines()
+end
+local function stop_server()
+	for k, _ in pairs(coroutines) do
+		coroutines[k] = nil
+	end
+	server:close()
+	server = nil
 end
 local function get_server()
 	return server
 end
-local function stop_server()
-	if server ~= nil then
-		server:close()
-		server = nil
-	end
-end
-local function accept_client()
-	client = server:accept()
-end
-local function get_client()
-	return client
-end
-
-
-local function send(data)
-	local content = json.encode(data)
-	local msg = ("Content-Length: %d\r\n\r\n%s"):format(#content, content)
-	client:send(msg)
-end
-
-local function handle_notification(data)
-	local handler = notification_handlers[data.method]
-	if handler == nil then
-		print("Missing notifcation handler for " .. tostring(data.method))
-	else
-		handler(data.params)
-	end
-end
-
-
----@param method string
----@param params table
-local function notify(method, params)
-	send {
-		jsonrpc = "2.0",
-		method = method,
-		params = params,
-	}
-end
-
----@param method string
----@param params table
----@param callback function @ optional
-local function request(method, params, callback)
-	id = id + 1
-	send {
-		jsonrpc = "2.0",
-		id=id,
-		method = method,
-		params = params,
-	}
-	pending_results[id] = {
-		error=nil,
-		result=nil,
-		id=id,
-		callback=callback
-	}
-	return pending_results[id]
-end
-
-
-local function receive(timeout)
-	client:settimeout(timeout)
-	local msg, err = client:receive()
-	if err == "timeout" then
-		return
-	elseif err == "closed" then
-		client = nil
-		return
-	elseif err ~= nil then
-		print("error during receive", err)
-		return nil, err
-	end
-	msg = json.decode(msg)
-	if msg.id then
-		return pending_results[msg.id]
-	else
-		handle_notification(msg)
-	end
-end
 
 
 return {
+	update=update,
+
 	start_server=start_server,
-	get_server=get_server,
 	stop_server=stop_server,
-	accept_client=accept_client,
-	get_client=get_client,
-	notify=notify,
-	request=request,
-	receive=receive,
-	notification_handlers=notification_handlers
+	get_server=get_server
 }
