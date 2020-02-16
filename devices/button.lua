@@ -89,7 +89,7 @@ function button:getWireDrawOffset()
 	return width/2, height/2
 end
 function button:clicked(x, y, button)
-	-- x, y is relitive to the position of the object and is never greater than :getSize()
+	-- x, y is relative to the position of the object and is never greater than :getSize()
 	self.fields.buttonState.value = self.fields.buttonState.value == 1 and 0 or 1
 end
 
