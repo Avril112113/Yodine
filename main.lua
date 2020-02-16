@@ -99,9 +99,6 @@ function love.load()
 	camera.x = -love.graphics.getWidth()/2
 	camera.y = -love.graphics.getHeight()/2
 
-	-- copy help file from game directory to save directory
-	love.filesystem.write("/Help.txt", love.filesystem.read("/data/Help.txt"))
-
 	love.keyboard.setKeyRepeat(true)
 end
 

@@ -1,4 +1,0 @@
-TODO
-
-Currently we don't know much about parallelization
-so keep that in mind when using multiple chips together
