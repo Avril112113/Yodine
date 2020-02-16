@@ -128,13 +128,13 @@ function Lamp:draw()
 	-- everything is already transformed, just draw as 0, 0 was top-left
 	local LampImg = GetImage("imgs/lamp.png")
 	local LampLightImg = GetImage("imgs/lamp_light.png")
+	local width, height = self:getSize()
+	love.graphics.draw(LampImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
 	if self.fields.LampOn.value ~= nil and self.fields.LampOn.value == 0 then
 		love.graphics.setColor(0.5, 0, 0, 1)
 	else
 		love.graphics.setColor(1, 0, 0, 1)
 	end
-	local width, height = self:getSize()
-	love.graphics.draw(LampImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
 	love.graphics.draw(LampLightImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
 end
 function Lamp:getSize()
