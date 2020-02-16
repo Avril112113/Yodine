@@ -91,18 +91,18 @@ do
 					end
 				end
 				local function setNewName()
-						if newName ~= nil then
-							field.name = newName
-							newName = nil
-						end
-						FieldNameEdit:SetText(field.name)
+					if newName ~= nil then
+						field.name = newName
+						newName = nil
 					end
+					FieldNameEdit:SetText(field.name)
+				end
 				function FieldNameEdit:Update(dt)
 					if FieldNameEdit:GetFocus() then
 						newName = FieldNameEdit:GetText()
 					else
 						setNewName()
-				end
+					end
 				end
 				FieldNameEdit.OnFocusLost = function() setNewName() end
 				DeviceFields:AddItem(FieldNameEdit, row, 1)
@@ -123,18 +123,18 @@ do
 					end
 				end
 				local function setNewValue()
-						if newValue ~= nil then
-							if tonumber(newValue) ~= nil then
-								field.value = tonumber(newValue)
-							elseif newValue == "" then
-								field.value = field.default
-							else
-								field.value = newValue:gsub("^\"", ""):gsub("\"$", "")
-							end
-							newValue = nil
+					if newValue ~= nil then
+						if tonumber(newValue) ~= nil then
+							field.value = tonumber(newValue)
+						elseif newValue == "" then
+							field.value = field.default
+						else
+							field.value = newValue:gsub("^\"", ""):gsub("\"$", "")
 						end
-						FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
+						newValue = nil
 					end
+					FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
+				end
 				function FieldValueEdit:Update(dt)
 					if FieldValueEdit:GetFocus() then
 						local text = FieldValueEdit:GetText()
