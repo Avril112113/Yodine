@@ -111,6 +111,7 @@ end
 function Map:removeObject(obj)
 	for i, v in pairs(self.objects) do
 		if v == obj then
+			self:disconnectAll(self.objects[i])
 			table.remove(self.objects, i)
 			return true
 		end
@@ -144,6 +145,13 @@ end
 function Map:disconnect(objA, objB)
 	objA.connections[objB] = nil
 	objB.connections[objA] = nil
+end
+
+---@param objA MapObject
+function Map:disconnectAll(obj)
+	for _, other in pairs(obj.connections) do
+		self:disconnect(obj, other)
+	end
 end
 
 ---@param objA MapObject
