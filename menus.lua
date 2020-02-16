@@ -90,17 +90,21 @@ do
 						FieldNameEdit:SetText(field.name)
 					end
 				end
-				function FieldNameEdit:Update(dt)
-					if FieldNameEdit:GetFocus() then
-						newName = FieldNameEdit:GetText()
-					else
+				local function setNewName()
 						if newName ~= nil then
 							field.name = newName
 							newName = nil
 						end
 						FieldNameEdit:SetText(field.name)
 					end
+				function FieldNameEdit:Update(dt)
+					if FieldNameEdit:GetFocus() then
+						newName = FieldNameEdit:GetText()
+					else
+						setNewName()
 				end
+				end
+				FieldNameEdit.OnFocusLost = function() setNewName() end
 				DeviceFields:AddItem(FieldNameEdit, row, 1)
 
 				local FieldValueEdit = loveframes.Create("textinput")
@@ -118,11 +122,7 @@ do
 						FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
 					end
 				end
-				function FieldValueEdit:Update(dt)
-					if FieldValueEdit:GetFocus() then
-						local text = FieldValueEdit:GetText()
-						newValue = text
-					else
+				local function setNewValue()
 						if newValue ~= nil then
 							if tonumber(newValue) ~= nil then
 								field.value = tonumber(newValue)
@@ -135,8 +135,16 @@ do
 						end
 						FieldValueEdit:SetText(type(field.value) == "string" and "\"" .. field.value .. "\"" or tostring(field.value))
 					end
+				function FieldValueEdit:Update(dt)
+					if FieldValueEdit:GetFocus() then
+						local text = FieldValueEdit:GetText()
+						newValue = text
+					else
+						setNewValue()
+					end
 				end
 				FieldValueEdit.OnFocusGained = OnValueEditFocusGained
+				FieldValueEdit.OnFocusLost = function() setNewValue() end
 				DeviceFields:AddItem(FieldValueEdit, row, 2)
 			end
 		end
