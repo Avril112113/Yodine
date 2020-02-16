@@ -13,11 +13,14 @@ local MapObject = {
 	---@type number
 	y=nil,
 	---@type table<MapObject,MapObject>
-	connections=nil
+	connections=nil,
+	---@type Map
+	map=nil
 }
 MapObject.__index = MapObject
-function MapObject.new(x, y, device)
+function MapObject.new(map, x, y, device)
 	local self = setmetatable(DeepCopy(device), MapObject)
+	self.map = map
 	self.x = x
 	self.y = y
 	self.connections = {}
@@ -29,8 +32,9 @@ function MapObject.new(x, y, device)
 	end
 	return self
 end
-function MapObject.newFromSave(device, save)
+function MapObject.newFromSave(map, device, save)
 	local self = setmetatable(DeepCopy(device), MapObject)
+	self.map = map
 	self.x = save.x or error("Missing field x on object save")
 	self.y = save.y or error("Missing field y on object save")
 	self.connections = save.connections or {}
@@ -50,6 +54,11 @@ function MapObject.newFromSave(device, save)
 	return self
 end
 
+function MapObject:changeField(field, newValue)
+	-- Convenience helper, No checks are done, expected to be called from devices code only
+	self.map:changeField(self, field.name, newValue)
+end
+
 ---@class Map
 local Map = {
 	---@type MapObject[]
@@ -60,6 +69,10 @@ Map.__index = Map
 ---@return Map
 function Map.new(save)
 	local objects = {}
+	local self = setmetatable({
+		objects=objects,
+		hasModification=false
+	}, Map)
 	if save ~= nil then
 		if save.objects ~= nil then
 			for i, v in ipairs(save.objects) do
@@ -67,7 +80,7 @@ function Map.new(save)
 				if device == nil then
 					error("Failed to find device with name " .. tostring(v.name))
 				end
-				objects[i] = MapObject.newFromSave(device, v)
+				objects[i] = MapObject.newFromSave(self, device, v)
 			end
 		end
 		-- make obj.connections references to objects instead of numbers again
@@ -81,10 +94,6 @@ function Map.new(save)
 			end
 		end
 	end
-	local self = setmetatable({
-		objects=objects,
-		hasModification=false
-	}, Map)
 	return self
 end
 
@@ -98,7 +107,7 @@ end
 ---@param y number
 ---@param device Device
 function Map:createObject(x, y, device)
-	local obj = MapObject.new(x, y, device)
+	local obj = MapObject.new(self, x, y, device)
 	if obj.init then
 		obj:init()
 	end
@@ -147,7 +156,7 @@ function Map:disconnect(objA, objB)
 	objB.connections[objA] = nil
 end
 
----@param objA MapObject
+---@param obj MapObject
 function Map:disconnectAll(obj)
 	for _, other in pairs(obj.connections) do
 		self:disconnect(obj, other)
