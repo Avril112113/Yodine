@@ -39,76 +39,51 @@ end
 
 local LampColorHue = {
 	name="LampColorHue",
-	default=360,
+	default=0,
 	desc="The HSV color hue value.\nRange: 0 - 360.0",
 	---@type Device_Lamp
 	parent=nil,
 	---@type number
 	value=nil
 }
----@param newValue string|number
----@return string|number
 function LampColorHue:changed(newValue)
-	if type(newValue) == "number" and newValue > 0 and newValue < 360 then
-		return newValue
+	if type(newValue) ~= "number" or newValue < 0 or newValue > 360 then
+		return self.value
 	end
-	return self.default
+	return newValue
 end
-
 local LampColorSaturation = {
 	name="LampColorSaturation",
-	default=360,
+	default=1,
 	desc="The HSV saturation value.\nRange: 0 - 1",
 	---@type Device_Lamp
 	parent=nil,
 	---@type number
 	value=nil
 }
----@param newValue string|number
----@return string|number
-function LampColorSaturation:changed(newValue)
-	if type(newValue) == "number" and newValue > 0 and newValue < 1 then
-		return newValue
-	end
-	return self.default
-end
+LampColorSaturation.changed = deviceValidation.changed_number0to1
 
 local LampColorValue = {
 	name="LampColorValue",
-	default=360,
-	desc="The HSV value value.\nRange: 0 - 1",
+	default=1,
+	desc="The HSV color value.\nRange: 0 - 1",
 	---@type Device_Lamp
 	parent=nil,
 	---@type number
 	value=nil
 }
----@param newValue string|number
----@return string|number
-function LampColorValue:changed(newValue)
-	if type(newValue) == "number" and newValue > 0 and newValue < 1 then
-		return newValue
-	end
-	return self.default
-end
+LampColorValue.changed = deviceValidation.changed_number0to1
 
 local LampRange = {
 	name="LampRange",
-	default=360,
-	desc="The HSV value value.\nRange: 0 - 1",
+	default=1,
+	desc="The HSV range value.\nRange: 0 - 1",
 	---@type Device_Lamp
 	parent=nil,
 	---@type number
 	value=nil
 }
----@param newValue string|number
----@return string|number
-function LampRange:changed(newValue)
-	-- TODO: no upper limit is known
-	if type(newValue) == "number" and newValue > 0 and newValue < 1000 then
-		return newValue
-	end
-	return self.default
-end
+LampRange.changed = deviceValidation.changed_number0to1
 
 ---@class Device_Lamp
 local Lamp = {
@@ -130,10 +105,11 @@ function Lamp:draw()
 	local LampLightImg = GetImage("imgs/lamp_light.png")
 	local width, height = self:getSize()
 	love.graphics.draw(LampImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
-	if self.fields.LampOn.value ~= nil and self.fields.LampOn.value == 0 then
-		love.graphics.setColor(0.5, 0, 0, 1)
+	if self.fields.LampOn.value ~= 1 then
+		love.graphics.setColor(0.1, 0.1, 0.1, 1)
 	else
-		love.graphics.setColor(1, 0, 0, 1)
+		local r, g, b = HSVToRGB(self.fields.LampColorHue.value, self.fields.LampColorSaturation.value, self.fields.LampColorValue.value)
+		love.graphics.setColor(r, g, b, 1)
 	end
 	love.graphics.draw(LampLightImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
 end
