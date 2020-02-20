@@ -47,8 +47,7 @@ end
 local jsonifyBlacklistedIndices = {
 	desc=true,
 	_device=true,
-	map=true,
-	name=true
+	map=true
 }
 local function validateDevice(device)
 	if type(device.name) ~= "string" then
@@ -103,14 +102,20 @@ return {
 	-- used for simplification, save's writing same code for different stuff
 	changed_anyNumber=function(self, newValue)
 		if type(newValue) ~= "number" then
-			error(self.name .. " expected a number but got " .. type(newValue) .. " instead.")
+			return self.value
 		end
-		return self.value
+		return newValue
 	end,
 	changed_anyString=function(self, newValue)
 		if type(newValue) ~= "string" then
-			error(self.name .. " expected a string but got " .. type(newValue) .. " instead.")
+			return self.value
 		end
-		return self.value
+		return newValue
+	end,
+	changed_number0to1=function(self, newValue)
+		if type(newValue) ~= "number" or newValue < 0 or newValue > 1 then
+			return self.value
+		end
+		return newValue
 	end
 }
