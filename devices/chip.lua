@@ -364,11 +364,7 @@ function chip:keypressedGUI(key)
 		end
 	end
 end
---[[
-:a = 0
-:b = 1
-:c = 2
-]]
+
 function chip:textinputGUI(text)
 	local newLine = self.lines[self.line]:sub(1, self.column) .. text .. self.lines[self.line]:sub(self.column+1, #self.lines[self.line])
 	if #newLine <= chip.maxCharsPerLine then
