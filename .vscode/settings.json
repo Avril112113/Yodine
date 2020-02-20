@@ -7,8 +7,8 @@
         "checkAST"
     ],
     "Lua.workspace.library": {
-        "C:\\Users\\dude112113\\Desktop\\Dudes Stuff\\AA Coding Projects\\Lua\\. LoveApiEmmyLua": true,
-        "C:\\Users\\dude112113\\Desktop\\Dudes Stuff\\AA Coding Projects\\Lua\\. SocketApiEmmyLua": true
+        "C:\\Users\\dude112113\\Desktop\\DudesStuff\\AA Coding Projects\\Lua\\. LoveApiEmmyLua": true,
+        "C:\\Users\\dude112113\\Desktop\\DudesStuff\\AA Coding Projects\\Lua\\. SocketApiEmmyLua": true
     },
     "Lua.runtime.version": "LuaJIT",
     "Lua.workspace.preloadFileSize": 200
