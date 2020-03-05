@@ -109,7 +109,7 @@ local defs = {
 		pusherror {
 			type="MISS_THEN",
 			pos=pos,
-			msg="Syntax Error: Missing `hen' keyword."
+			msg="Syntax Error: Missing 'then' keyword."
 		}
 	end,
 	EXPECT_IDENT=function(pos)
@@ -137,7 +137,7 @@ local defs = {
 		pusherror {
 			type="FLOATING_EXPR",
 			pos=pos,
-			msg="Syntax Error: Floating exprestion is not allowed."
+			msg="Syntax Error: Floating expression is not allowed."
 		}
 	end,
 	SYNTAX_ERROR=function(pos, remaining, finish)
