@@ -23,5 +23,5 @@ to use the provided dlls get 32-bit love2d.
 ## grammar.relabel
 For editing this file I have made an vscode extension, if you'd like the extension to be put on github just request so.
 
-## Binary's
+## Binaries
 LPegLabel [github](https://github.com/sqmedeiros/lpeglabel) complied for LuaJIT 32-bit  
