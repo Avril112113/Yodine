@@ -17,7 +17,7 @@ Click with `LMB` on a device to select single device
 
 # Repo info
 ## Running
-To run this you will need [love2d](http://love2d.org/) version 11.2  
+To run this you will need [love2d](http://love2d.org/) version 11.x  
 to use the provided dlls get 32-bit love2d.  
 
 ## grammar.relabel
