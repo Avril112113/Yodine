@@ -310,7 +310,7 @@ function love.keypressed(key, isrepeat)
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
-	elseif key == "c" then
+	elseif not love.keyboard.isDown("lctrl") and key == "c" then
 		local x, y = love.mouse.getX(), love.mouse.getY()
 		local worldX, worldY = camera:cameraPosition(x, y)
 		local has_cdo = false
