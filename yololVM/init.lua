@@ -371,11 +371,11 @@ end
 
 local function execCode_errHandler(err)
 	if type(err) == "string" and err:sub(#err-18, #err) == "STOP_LINE_EXECUTION" then
-		return false
+		return false, "STOP_LINE_EXECUTION"
 	else
 		print("CRITIAL VM ERROR:")
 		print(debug.traceback(err))
-		return true
+		return true, err
 	end
 end
 function vm:execCode(code)
@@ -402,6 +402,14 @@ function vm:execCode(code)
 			elseif result == false then
 				break
 			end
+		end
+	end
+end
+function vm:rawExecCode(code)
+	for _, v in ipairs(code) do
+		-- i think empty lines cause empty string to be in line.code ???
+		if type(v) ~= "string" then
+			self:executeStatement(v)
 		end
 	end
 end
@@ -522,10 +530,10 @@ function vm:st_if(ast)
 	local value = self:evalExpr(ast.condition)
 	if value == 0 then
 		if ast.else_body ~= nil then
-			self:execCode(ast.else_body)
+			self:rawExecCode(ast.else_body)
 		end
 	else
-		self:execCode(ast.body)
+		self:rawExecCode(ast.body)
 	end
 end
 
