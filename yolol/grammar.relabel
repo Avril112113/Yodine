@@ -55,7 +55,7 @@ named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN / NOT
 pre_post_op	<- '+' Sp '+' / '-' Sp '-'
 add_op		<- !pre_post_op [+-]
 neg_op		<- '-' (&('-' Sp '-') / !'-')
-mul_op		<- [*/%]
+mul_op		<- [*/%] !'/'
 exp_op		<- '^'
 fac_op		<- (!'!' Sp !'=' / &('!' Sp '=' Sp '=')) '!'
 neq_op		<- [<>] Sp '='?
