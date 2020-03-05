@@ -12,7 +12,7 @@ Drag with `LMB` to select multiple devices
 Drag with `LMB` on selected device\[s\] to move them  
 Click with `LMB` on a device to select single device  
 `Ctrl` + `LMB` on a device to add device to selection  
-`MMB` on one object then another to connect or disconnect a cable between them  
+`MMB` or `c` while the mouse is on one object while another device is selected to make a connection between them (selects device if no other device is currently selected)  
 `Delete` or `X` will remove selected devices, if no devices selected then removes device under cursor  
 
 # Repo info

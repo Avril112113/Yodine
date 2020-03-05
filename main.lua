@@ -310,6 +310,26 @@ function love.keypressed(key, isrepeat)
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
+	elseif key == "c" then
+		local x, y = love.mouse.getX(), love.mouse.getY()
+		local worldX, worldY = camera:cameraPosition(x, y)
+		local has_cdo = false
+		local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
+		local cdo_mx, cdo_my
+		if cdo_x ~= nil then
+			has_cdo = true
+			cdo_mx, cdo_my = x-cdo_x, y-cdo_y
+		end
+		local obj = LoadedMap:getObjectAt(worldX, worldY)
+		if menus.DeviceInfo.device ~= nil and obj ~= nil then
+			if LoadedMap:isConnected(obj, menus.DeviceInfo.device) then
+				LoadedMap:disconnect(obj, menus.DeviceInfo.device)
+			else
+				LoadedMap:connect(obj, menus.DeviceInfo.device)
+			end
+		else
+			menus.DeviceInfo.setDevice(obj)
+		end
 	end
 end
 function love.keyreleased(key)
