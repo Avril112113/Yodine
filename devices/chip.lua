@@ -358,7 +358,11 @@ function chip:keypressedGUI(key)
 				self.column = self.column + #text
 				self:checkColumn()
 			end
-			local newLine = self.lines[line]:sub(1, column) .. text .. self.lines[line]:sub(column+1, #self.lines[line])
+			local curLine = self.lines[line]
+			if curLine == nil then
+				return
+			end
+			local newLine = curLine:sub(1, column) .. text .. curLine:sub(column+1, #curLine)
 			self.lines[line] = newLine
 			self:codeChanged(line)
 		end
