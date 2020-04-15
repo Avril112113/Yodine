@@ -1,232 +1,111 @@
-local devices = require "devices"
-local devicesNameLookup = {}
-for _, device in pairs(devices) do
-	devicesNameLookup[device.name] = device
-end
+local Network = require "Network"
 
-
----@class MapObject
-local MapObject = {
-	-- NOTE: a device is just an 'extension' of this (Technically its the other way round in code)
-	---@type number
-	x=nil,
-	---@type number
-	y=nil,
-	---@type table<MapObject,MapObject>
-	connections=nil,
-	---@type Map
-	map=nil
+---@class Relay
+local Relay = {
+	---@type Network
+	src=nil,
+	---@type Network
+	dst=nil
 }
-MapObject.__index = MapObject
-function MapObject.new(map, x, y, device)
-	local self = setmetatable(DeepCopy(device), MapObject)
-	self.map = map
-	self.x = x
-	self.y = y
-	self.connections = {}
-	self._device = device  -- just incase we need the original reference for comparison for example
-
-	for i, v in pairs(self.fields) do
-		v.value = v.default
-		v.parent = self
-	end
-	return self
-end
-function MapObject.newFromSave(map, device, save)
-	local self = setmetatable(DeepCopy(device), MapObject)
-	self.map = map
-	self.x = save.x or error("Missing field x on object save")
-	self.y = save.y or error("Missing field y on object save")
-	self.connections = save.connections or {}
-	self._device = device  -- just incase we need the original reference for comparison for example
-
-	for i, v in pairs(self.fields) do
-		v.value = v.default
-		v.parent = self
-	end
-	if save.fields ~= nil then
-		for i, v in pairs(save.fields) do
-			local field = self.fields[i]
-			field.name = v.name or field.name
-			field.value = v.value
-		end
-	end
-	return self
-end
-
-function MapObject:changeField(field, newValue)
-	-- Convenience helper, No checks are done, expected to be called from devices code only
-	self.map:changeField(self, field.name, newValue)
-end
 
 ---@class Map
-local Map = {
-	---@type MapObject[]
-	objects=nil,
-	hasModification=false
-}
+local Map = {}
 Map.__index = Map
+
 ---@return Map
-function Map.new(save)
-	local objects = {}
+function Map.new()
 	local self = setmetatable({
-		objects=objects,
-		hasModification=false
+		---@type table<string, Network>
+		networks={},
+		---@type Relay[]
+		relays={}  -- Not used yet
 	}, Map)
-	if save ~= nil then
-		if save.objects ~= nil then
-			for i, v in ipairs(save.objects) do
-				local device = devicesNameLookup[v.name]
-				if device == nil then
-					error("Failed to find device with name " .. tostring(v.name))
-				end
-				objects[i] = MapObject.newFromSave(self, device, v)
-			end
-		end
-		-- make obj.connections references to objects instead of numbers again
-		-- also run obj.loadFromSave if exists
-		for objI, obj in pairs(objects) do
-			for i, connectionObjIndex in pairs(obj.connections) do
-				obj.connections[i] = objects[connectionObjIndex]
-			end
-			if obj.loadFromSave ~= nil then
-				obj:loadFromSave(save.objects[objI])
-			end
-		end
+	return self
+end
+
+function Map.deserialize(save)
+	local self = Map.new()
+	for _, networkSave in pairs(save.networks) do
+		self.networks[networkSave.name] = Network.deserialize(self, networkSave)
+	end
+	for _, relay in ipairs(save.relays) do
+		self.relays[#self.relays+1] = {
+			src=relay.src,
+			dst=relay.dst
+		}
 	end
 	return self
 end
 
-function Map:jsonify()
-	return {
-		objects=jsonify_auto(self.objects)
-	}
+---@return string
+function Map:serialize()
+	local networks = {}
+	for _, network in pairs(self.networks) do
+		networks[#networks+1] = network:serialize()
+	end
+	local relays = {}
+	for _, relay in pairs(self.relays) do
+		relays[#relays+1] = relay
+	end
+	return setmetatable({
+		networks=setmetatable(networks, {__yaml_mapping=false}),
+		relays=setmetatable(relays, {__yaml_mapping=false})
+	}, {__yaml_order={networks=1}})
+end
+
+function Map:update(dt)
+	for _, network in pairs(self.networks) do
+		network:update(dt)
+	end
+end
+
+function Map:removeNetwork(network)
+	self.networks[network.name] = nil
+end
+
+function Map:addNetwork(network)
+	if self.networks[network.name] ~= nil then
+		error("Attempt to override existing network with name " .. network.name)
+	end
+	self.networks[network.name] = network
 end
 
 ---@param x number
 ---@param y number
----@param device Device
-function Map:createObject(x, y, device)
-	local obj = MapObject.new(self, x, y, device)
-	if obj.init then
-		obj:init()
-	end
-	table.insert(self.objects, obj)
-	self.hasModification = true
-	return obj
-end
-
----@param obj MapObject
-function Map:removeObject(obj)
-	for i, v in pairs(self.objects) do
-		if v == obj then
-			self:disconnectAll(self.objects[i])
-			table.remove(self.objects, i)
-			return true
-		end
-	end
-	self.hasModification = true
-	return false
-end
-
----@param x number
----@param y number
+---@return Device|nil
 function Map:getObjectAt(x, y)
-	for i, v in pairs(self.objects) do
-		if v.getSize ~= nil then
-			local width, height = v:getSize()
-			if IsInside(v.x, v.y, v.x+width, v.y+height, x, y) then
-				return v
+	for _, network in pairs(self.networks) do
+		if network:withinBounds(x, y) then
+			local obj = network:getObjectAt(x, y)
+			if obj ~= nil then
+				return obj
 			end
 		end
 	end
 end
 
----@param objA MapObject
----@param objB MapObject
-function Map:connect(objA, objB)
-	objA.connections[objB] = objB
-	objB.connections[objA] = objA
-end
-
----@param objA MapObject
----@param objB MapObject
-function Map:disconnect(objA, objB)
-	objA.connections[objB] = nil
-	objB.connections[objA] = nil
-end
-
----@param obj MapObject
-function Map:disconnectAll(obj)
-	for _, other in pairs(obj.connections) do
-		self:disconnect(obj, other)
-	end
-end
-
----@param objA MapObject
----@param objB MapObject
-function Map:isConnected(objA, objB)
-	return objA.connections[objB] ~= nil or objB.connections[objA] ~= nil
-end
-
----@param origin MapObject
----@param fieldName string
----@param newValue string|number
-function Map:changeField(origin, fieldName, newValue)
-	assert(origin ~= nil)
-	assert(fieldName ~= nil)
-	assert(newValue ~= nil)
-	local processed = {}
-	local toProcess = {origin}
-	while #toProcess > 0 do
-		local obj = table.remove(toProcess)
-		processed[obj] = obj
-		for _, v in pairs(obj.fields) do
-			if v.name:lower() == fieldName:lower() then
-				v.value = v.changed and v:changed(newValue) or newValue
-			end
-		end
-		for _, v in pairs(obj.connections) do
-			if processed[v] == nil then
-				table.insert(toProcess, v)
-			end
+---@param x number
+---@param y number
+---@return Network|nil
+function Map:getNetworkAt(x, y)
+	for _, network in pairs(self.networks) do
+		if network:withinBounds(x, y) then
+			return network
 		end
 	end
 end
 
----@param origin MapObject
----@param fieldName string
-function Map:getField(origin, fieldName)
-	assert(origin ~= nil)
-	assert(fieldName ~= nil)
-	local values = {}
-	local processed = {}
-	local toProcess = {origin}
-	while #toProcess > 0 do
-		local obj = table.remove(toProcess)
-		processed[obj] = obj
-		for _, v in pairs(obj.fields) do
-			if v.name:lower() == fieldName:lower() then
-				table.insert(values, v.value)
-			end
-		end
-		for _, v in pairs(obj.connections) do
-			if processed[v] == nil then
-				table.insert(toProcess, v)
-			end
+---@param x number
+---@param y number
+---@return Network|nil
+function Map:getNetworksAt(x, y)
+	local networks = {}
+	for _, network in pairs(self.networks) do
+		if network:withinBounds(x, y) then
+			table.insert(networks, network)
 		end
 	end
-	if #values <= 0 then
-		return nil  -- undefined handled by caller
-	else
-		local value = values[1]
-		for i, v in pairs(values) do
-			if v ~= value then
-				return nil, true
-			end
-		end
-		return value
-	end
+	return networks
 end
 
 return Map

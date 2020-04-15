@@ -57,8 +57,8 @@ add_op		<- !pre_post_op [+-]
 neg_op		<- '-' (&('-' Sp '-') / !'-')
 mul_op		<- [*/%] !'/'
 exp_op		<- '^'
-fac_op		<- (!'!' Sp !'=' / &('!' Sp '=' Sp '=')) '!'
-neq_op		<- [<>] Sp '='?
+fac_op		<- (!eq_op / &('!' Sp eq_op)) '!'
+neq_op		<- [<>] (Sp '=')?
 eq_op		<- [!=] Sp '='
 
 string	<- '"' (" "/"!"/[#-~])*->string '"'

@@ -4,12 +4,17 @@
         "pushTest",
         "parse",
         "defs",
-        "checkAST"
+        "checkAST",
+        "tointeger"
     ],
     "Lua.workspace.library": {
-        "C:\\Users\\dude112113\\Desktop\\DudesStuff\\AA Coding Projects\\Lua\\. LoveApiEmmyLua": true,
-        "C:\\Users\\dude112113\\Desktop\\DudesStuff\\AA Coding Projects\\Lua\\. SocketApiEmmyLua": true
+        "..\\. LoveApiEmmyLua": true,
+        "..\\. SocketApiEmmyLua": true
     },
     "Lua.runtime.version": "LuaJIT",
-    "Lua.workspace.preloadFileSize": 200
+    "Lua.workspace.preloadFileSize": 200,
+    "Lua.workspace.ignoreDir": [
+        ".vscode",
+        "old"
+    ]
 }

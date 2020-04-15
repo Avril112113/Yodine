@@ -2,39 +2,34 @@ if love.filesystem.isFused() then
 	love.filesystem.mount(love.filesystem.getSourceBaseDirectory(), "", true)
 end
 love.filesystem.setRequirePath("libs/?.lua;libs/?/init.lua;" .. love.filesystem.getRequirePath())
-love.filesystem.setCRequirePath("libs/??;" .. love.filesystem.getCRequirePath())
+love.filesystem.setCRequirePath("libs/??;libs/l??;" .. love.filesystem.getCRequirePath())
 package.path = ""
 package.cpath = ""
 
+math.randomseed(os.time())
 
--- require "test"
--- require "test_rpc"
 require "utils"  -- provides a set of global functions
+
 
 -- Constant's and defining locals
 BackgroundCellSize = 20
+DoubleClickTime = 0.2
 DefaultFont = GetFont()
-Consola = love.graphics.newFont("fonts/consola.ttf")
 
 local background
 
 local loveframes = require "loveframes"
 local camera = require "camera"
-local json = require "json"
 
 -- local yolol = require "yolol"
 local menus = require "menus"
-local Map = require "Map"
+local devices = require "devices"
+local SaveSystem = require "SaveSystem"
+local Network = require "Network"
 
-
-LoadedMap = Map.new()
-
--- local devices = require "devices"
--- LoadedMap:createObject(0, 0, devices.chip)
-
+SaveSystem.loadTempSave()
 
 -- Variables
-CenterDrawObject = nil  -- used if a map object has a :drawGUI(), there are other functions for input ect
 SelectedDevices = {}
 local dragSelectionPosition
 local isMovingSelection = false
@@ -56,28 +51,6 @@ function ClearSelectedDevices()
 	menus.DeviceInfo.setDevice(nil)
 end
 
-
-function SetCenterDrawObject(obj)
-	if obj == nil then
-		CenterDrawObject = nil
-	else
-		if obj.drawGUI == nil then
-			error("Attempt to set center draw object but does not have :drawGUI()")
-		end
-		if obj.getSizeGUI == nil then
-			error("Attempt to set center draw object but does not have :getSizeGUI()")
-		end
-		CenterDrawObject = obj
-	end
-end
-function GetCenterDrawObjectPositionData()
-	if CenterDrawObject ~= nil and CenterDrawObject.getSizeGUI ~= nil then
-		local ww, wh = love.graphics.getWidth(), love.graphics.getHeight()
-		local cdo_w, cdo_h = CenterDrawObject:getSizeGUI()
-		local cdo_x, cdo_y = (ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2)
-		return cdo_x, cdo_y, cdo_w, cdo_h
-	end
-end
 
 local function genBackgroundImage()
 	local imgData = love.image.newImageData(love.graphics.getWidth()+BackgroundCellSize, love.graphics.getHeight()+BackgroundCellSize)
@@ -113,44 +86,47 @@ function love.draw()
 	love.graphics.draw(background, -camera.x%BackgroundCellSize-BackgroundCellSize, -camera.y%BackgroundCellSize-BackgroundCellSize)
 
 	camera:set()
-		love.graphics.setColor(0, 0, 0, 0.5)
-		love.graphics.print("0,0", -GetFont():getWidth("0,0")/2, -GetFont():getHeight()+2)
+		for _, network in pairs(SaveSystem.loadedSave.map.networks) do
+			local polygon = {}
+			for _, v in ipairs(network.hull) do
+				table.insert(polygon, v[1])
+				table.insert(polygon, v[2])
+			end
+			local r, g, b = unpack(network.color)
+			love.graphics.setColor(r, g, b, 0.5)
+			love.graphics.polygon("fill", polygon)
+			love.graphics.setColor(1-r, 1-g, 1-b, 0.75)
+			love.graphics.polygon("line", polygon)
+		end
 
-		love.graphics.setColor(0.3, 0.3, 0.3, 1)
-		love.graphics.setLineWidth(3)
-		for _, v in pairs(LoadedMap.objects) do
-			for _, other in pairs(v.connections) do
-				local vOffX, vOffY = 0, 0
-				local otherOffX, otherOffY = 0, 0
-				if v.getWireDrawOffset then vOffX, vOffY = v:getWireDrawOffset() end
-				if other.getWireDrawOffset then otherOffX, otherOffY = other:getWireDrawOffset() end
-				love.graphics.line(v.x+vOffX, v.y+vOffY, other.x+otherOffX, other.y+otherOffY)
+		love.graphics.setColor(0, 0, 0, 0.5)
+		local posText = math.floor(camera.x+love.graphics.getWidth()/2)..","..math.floor(camera.y+love.graphics.getHeight()/2)
+		love.graphics.setNewFont(12)
+		love.graphics.print(posText, camera.x+(love.graphics.getWidth()/2)-GetFont():getWidth(posText), camera.y+(love.graphics.getHeight()/2))
+
+		for _, network in pairs(SaveSystem.loadedSave.map.networks) do
+			for _, v in pairs(network.objects) do
+				if getmetatable(v.Device) == devices.DeviceMeta then
+					love.graphics.push()
+						love.graphics.translate(v.x, v.y)
+						love.graphics.setColor(1, 1, 1, 1)
+						v:draw()
+					love.graphics.pop()
+				end
 			end
 		end
 
-		for _, v in pairs(LoadedMap.objects) do
-			love.graphics.push()
-				love.graphics.translate(v.x, v.y)
-				if v.draw == nil then
-					love.graphics.setColor(0, 0, 0, 1)
-					love.graphics.print(v.name .. " Has no :draw()")
-				else
-					love.graphics.setColor(1, 1, 1, 1)
-					v:draw()
-				end
-			love.graphics.pop()
-		end
-
-		love.graphics.setColor(1, 0.5, 0, 0.8)
 		love.graphics.setLineWidth(3)
 		love.graphics.setLineStyle("smooth")
+
+		love.graphics.setColor(1, 0.5, 0, 0.8)
 		for _, device in pairs(SelectedDevices) do
-			love.graphics.rectangle("line", device.x, device.y, device:getSize())
+			if getmetatable(device.Device) == devices.DeviceMeta then
+				love.graphics.rectangle("line", device.x, device.y, device:getSize())
+			end
 		end
 
 		love.graphics.setColor(0.9, 0.9, 0.9, 0.8)
-		love.graphics.setLineWidth(3)
-		love.graphics.setLineStyle("smooth")
 		if dragSelectionPosition ~= nil then
 			local x, y = dragSelectionPosition[1], dragSelectionPosition[2]
 			local mwx, mwy = camera:mousePosition()
@@ -158,86 +134,109 @@ function love.draw()
 		end
 	camera:unset()
 
-	if CenterDrawObject ~= nil and CenterDrawObject.drawGUI ~= nil and CenterDrawObject.getSizeGUI ~= nil then
-		love.graphics.push()
-			local cdo_w, cdo_h = CenterDrawObject:getSizeGUI()
-			love.graphics.translate((ww/2)-(cdo_w/2), (wh/2)-(cdo_h/2))
-			CenterDrawObject:drawGUI()
-		love.graphics.pop()
-	end
-
 	loveframes.draw()
 
 	local draggingDevice = menus.DevicesList.draggingDevice
 	if draggingDevice ~= nil then
 		love.graphics.push()
-		love.graphics.translate(love.mouse.getPosition())
+		local w, h = draggingDevice:getSize()
+		local mx, my = love.mouse.getPosition()
+		love.graphics.translate(mx-(w/2), my-(h/2))
 		draggingDevice:draw()
 		love.graphics.pop()
 	end
 end
 
+local lastSave = os.clock()
 function love.update(dt)
+	if SaveSystem.loadedSave.save.name == "%TMP%" and os.clock() - lastSave > 10 then
+		lastSave = os.clock()
+		SaveSystem.save(SaveSystem.loadedSave.save.name, false)
+	end
+
 	loveframes.update(dt)
 	if loveframes.collisioncount <= 0 then
 		camera:dragPosition(2)
 	end
 
-	for _, v in pairs(LoadedMap.objects) do
-		if v.update then
-			v:update(dt)
-		end
-	end
+	SaveSystem.loadedSave.map:update(dt)
 
 	local draggingDevice = menus.DevicesList.draggingDevice
 	if draggingDevice ~= nil then
 		if not love.mouse.isDown(1) then
-			local x, y = camera:mousePosition()
-			LoadedMap:createObject(x, y, draggingDevice)
+			local mx, my = love.mouse.getPosition()
+			local hoveredMenu
+			-- TODO: might want to move this to a function
+			for _, menu in pairs(menus) do
+				if menu.base.visible ~= false then
+					local x, y = menu.base.x, menu.base.y
+					local xw, yh = x + menu.base.width, y + menu.base.height
+					if IsInside(x, y, xw, yh, mx, my) then
+						if hoveredMenu == nil then
+							hoveredMenu = menu
+						else
+							local otherOrder = hoveredMenu.base.draworder
+							local newOrder = menu.base.draworder
+							if (otherOrder == nil and newOrder ~= nil) or (otherOrder ~= nil and newOrder ~= nil and otherOrder < newOrder) then
+								hoveredMenu = menu
+							end
+						end
+					end
+				end
+			end
+
+			if hoveredMenu ~= nil then
+				if hoveredMenu.deviceDropped then
+					hoveredMenu:deviceDropped(draggingDevice)
+				end
+			elseif loveframes.collisioncount <= 0 and getmetatable(draggingDevice) == devices.DeviceMeta then
+				local cmx, cmy = camera:mousePosition()
+				local w, h = draggingDevice:getSize()
+				local dx, dy = cmx-(w/2), cmy-(h/2)
+				local network = SaveSystem.loadedSave.map:getNetworkAt(dx, dy)
+				for _, point in pairs(draggingDevice:getBounds(dx, dy)) do
+					for _, _network in pairs(SaveSystem.loadedSave.map:getNetworksAt(point[1], point[2])) do
+						network = _network
+						break
+					end
+				end
+				if network == nil then
+					network = Network.new(SaveSystem.loadedSave.map)
+					SaveSystem.loadedSave.map:addNetwork(network)
+				end
+				local obj = draggingDevice:create(dx, dy)
+				obj:changeNetwork(network)
+			end
 			menus.DevicesList.draggingDevice = nil
 		end
 	end
 end
 
+local lastclick = 0
 function love.mousepressed(x, y, button)
 	loveframes.mousepressed(x, y, button)
 	if loveframes.collisioncount > 0 then return end
 
 	local worldX, worldY = camera:cameraPosition(x, y)
-	local has_cdo = false
-	local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
-	local cdo_mx, cdo_my
-	if cdo_x ~= nil then
-		has_cdo = true
-		cdo_mx, cdo_my = x-cdo_x, y-cdo_y
-	end
-	local obj = LoadedMap:getObjectAt(worldX, worldY)
-	if button == 3 then
-		if menus.DeviceInfo.device ~= nil and obj ~= nil then
-			if LoadedMap:isConnected(obj, menus.DeviceInfo.device) then
-				LoadedMap:disconnect(obj, menus.DeviceInfo.device)
-			else
-				LoadedMap:connect(obj, menus.DeviceInfo.device)
-			end
-		else
-			menus.DeviceInfo.setDevice(obj)
-		end
-	elseif button == 1 then
-		if has_cdo and IsInside(cdo_x, cdo_y, cdo_x+cdo_w, cdo_y+cdo_h, x, y) then
-			CenterDrawObject:clickedGUI(cdo_mx, cdo_my, button)
-		elseif obj == nil then
-			if not love.keyboard.isDown("lctrl") then
-				ClearSelectedDevices()
-			end
-			dragSelectionPosition = {worldX, worldY}
-		elseif obj ~= nil then
-			AddSelectedDevice(obj)
+	local obj = SaveSystem.loadedSave.map:getObjectAt(worldX, worldY)
+	if os.clock() < lastclick + DoubleClickTime and obj and obj.openGUI then
+		lastclick = os.clock() + DoubleClickTime
+		obj:openGUI()
+	else
+		lastclick = os.clock()
+		if button == 1 then
+			if obj == nil then
+				if not love.keyboard.isDown("lctrl") then
+					ClearSelectedDevices()
+				end
+				dragSelectionPosition = {worldX, worldY}
+			elseif obj ~= nil then
+				AddSelectedDevice(obj)
 
-			if obj.clicked then
 				obj:clicked(obj.x-worldX, obj.y-worldY, button)
+				hasMovedSelection = false
+				isMovingSelection = true
 			end
-			hasMovedSelection = false
-			isMovingSelection = true
 		end
 	end
 end
@@ -250,7 +249,7 @@ function love.mousereleased(x, y, button)
 
 			if not hasMovedSelection and not love.keyboard.isDown("lctrl") then
 				local worldX, worldY = camera:cameraPosition(x, y)
-				local obj = LoadedMap:getObjectAt(worldX, worldY)
+				local obj = SaveSystem.loadedSave.map:getObjectAt(worldX, worldY)
 				ClearSelectedDevices()
 				AddSelectedDevice(obj)
 			end
@@ -268,10 +267,14 @@ function love.mousereleased(x, y, button)
 				y1 = t
 			end
 			dragSelectionPosition = nil
-			for _, obj in pairs(LoadedMap.objects) do
-				local objW, objH = obj:getSize()
-				if obj.x > x1-objW and obj.y > y1-objH and obj.x+objW < x2+objW and obj.y+objH < y2+objH then
-					AddSelectedDevice(obj)
+			for _, network in pairs(SaveSystem.loadedSave.map.networks) do
+				for _, obj in pairs(network.objects) do
+					if getmetatable(obj.Device) == devices.DeviceMeta then
+						local objW, objH = obj:getSize()
+						if obj.x > x1-objW and obj.y > y1-objH and obj.x+objW < x2+objW and obj.y+objH < y2+objH then
+							AddSelectedDevice(obj)
+						end
+					end
 				end
 			end
 		end
@@ -281,9 +284,28 @@ end
 function love.mousemoved(x, y, dx, dy)
 	if isMovingSelection then
 		hasMovedSelection = true
+		local hullGenedNetworks = {}
 		for _, v in pairs(SelectedDevices) do
-			v.x = v.x + dx
-			v.y = v.y + dy
+			if getmetatable(v) == devices.DeviceMeta then
+				v.x = v.x + dx
+				v.y = v.y + dy
+				---@type table<Network, Network>
+				local networks = {}
+				for _, point in pairs(v:getBounds()) do
+					for _, network in pairs(SaveSystem.loadedSave.map:getNetworksAt(point[1], point[2])) do
+						networks[network] = network
+					end
+				end
+				networks[v.network] = nil
+				for _, network in pairs(networks) do
+					v:changeNetwork(network)
+					break
+				end
+				if hullGenedNetworks[v.network] == nil then
+					v.network:generateHull()
+					hullGenedNetworks[v.network] = v.network
+				end
+			end
 		end
 	end
 end
@@ -295,41 +317,35 @@ end
 function love.keypressed(key, isrepeat)
 	loveframes.keypressed(key, isrepeat)
 
-	if CenterDrawObject ~= nil and key == "escape" then
-		SetCenterDrawObject()
-	elseif CenterDrawObject ~= nil and CenterDrawObject.keypressedGUI then
-		CenterDrawObject:keypressedGUI(key)
-	elseif loveframes.collisioncount <= 0 and (key == "delete" or key == "x") then
+	if loveframes.collisioncount <= 0 and key == "delete" then
 		local isEmpty = true; for _, _ in pairs(SelectedDevices) do isEmpty = false break end
 		if isEmpty then
-			AddSelectedDevice(LoadedMap:getObjectAt(camera:mousePosition()))
+			local obj = SaveSystem.loadedSave.map:getObjectAt(camera:mousePosition())
+			if obj ~= nil then
+				obj:destroy()
+			end
+		else
+			for _, obj in pairs(SelectedDevices) do
+				RemoveSelectedDevice(obj)
+				obj:destroy()
+			end
+			ClearSelectedDevices()
 		end
-		for _, v in pairs(SelectedDevices) do
-			RemoveSelectedDevice(v)
-			LoadedMap:removeObject(v)
+	elseif loveframes.collisioncount <= 0 and key == "c" then
+		local isEmpty = true; for _, _ in pairs(SelectedDevices) do isEmpty = false break end
+		if isEmpty then
+			local obj = SaveSystem.loadedSave.map:getObjectAt(camera:mousePosition())
+			if obj ~= nil then
+				AddSelectedDevice(obj)
+			end
+		end
+		local network = Network.new(SaveSystem.loadedSave.map)
+		SaveSystem.loadedSave.map:addNetwork(network)
+		for _, obj in pairs(SelectedDevices) do
+			obj:changeNetwork(network)
 		end
 	elseif key == "f12" then
 		loveframes.config.DEBUG = not loveframes.config.DEBUG
-	elseif not love.keyboard.isDown("lctrl") and key == "c" then
-		local x, y = love.mouse.getX(), love.mouse.getY()
-		local worldX, worldY = camera:cameraPosition(x, y)
-		local has_cdo = false
-		local cdo_x, cdo_y, cdo_w, cdo_h = GetCenterDrawObjectPositionData()
-		local cdo_mx, cdo_my
-		if cdo_x ~= nil then
-			has_cdo = true
-			cdo_mx, cdo_my = x-cdo_x, y-cdo_y
-		end
-		local obj = LoadedMap:getObjectAt(worldX, worldY)
-		if menus.DeviceInfo.device ~= nil and obj ~= nil then
-			if LoadedMap:isConnected(obj, menus.DeviceInfo.device) then
-				LoadedMap:disconnect(obj, menus.DeviceInfo.device)
-			else
-				LoadedMap:connect(obj, menus.DeviceInfo.device)
-			end
-		else
-			menus.DeviceInfo.setDevice(obj)
-		end
 	end
 end
 function love.keyreleased(key)
@@ -337,11 +353,7 @@ function love.keyreleased(key)
 end
 
 function love.textinput(text)
-	if CenterDrawObject ~= nil and CenterDrawObject.textinputGUI then
-		CenterDrawObject:textinputGUI(text)
-	else
-		loveframes.textinput(text)
-	end
+	loveframes.textinput(text)
 end
 
 function love.resize()
@@ -349,7 +361,11 @@ function love.resize()
 
 	for _, menu in pairs(menus) do
 		if menu.update then
-			menu.update()
+			menu:update()
 		end
 	end
+end
+
+function love.quit()
+	SaveSystem.save(SaveSystem.loadedSave.save.name, SaveSystem.loadedSave.save.name ~= "%TMP%")
 end

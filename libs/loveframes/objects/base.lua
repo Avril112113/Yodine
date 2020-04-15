@@ -7,6 +7,7 @@ return function(loveframes)
 ---------- module start ----------
 
 -- base object
+---@class loveframes_object_base
 local newobject = loveframes.NewObject("base", "loveframes_object_base")
 
 --[[---------------------------------------------------------

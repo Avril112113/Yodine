@@ -12,8 +12,8 @@ Drag with `LMB` to select multiple devices
 Drag with `LMB` on selected device\[s\] to move them  
 Click with `LMB` on a device to select single device  
 `Ctrl` + `LMB` on a device to add device to selection  
-`MMB` or `c` while the mouse is on one object while another device is selected to make a connection between them (selects device if no other device is currently selected)  
-`Delete` or `X` will remove selected devices, if no devices selected then removes device under cursor  
+`Delete` will remove selected devices, if no devices selected then removes device under cursor  
+`C` will connect all selected devices into a single network, it will seperate the device under the cursor from its network  
 
 # Repo info
 ## Running
@@ -25,3 +25,5 @@ For editing this file I have made an vscode extension, if you'd like the extensi
 
 ## Binaries
 LPegLabel [github](https://github.com/sqmedeiros/lpeglabel) complied for LuaJIT 32-bit  
+lyaml [github](https://github.com/gvvaughan/lyaml) complied for LuaJIT 32-bit  
+libyaml-0-2 [github](https://github.com/yaml/libyaml) compiled for 32-bit  

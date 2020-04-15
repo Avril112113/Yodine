@@ -1,0 +1,73 @@
+-- Device not fully implemented yet, using `._lua` extension to stop from being loaded into Yodine
+
+local devices = require "devices"
+
+
+---@class RackDevice
+local RackDevice = setmetatable({
+	name="Rack",
+	desc="Modular device racks are a compact way to store multiple YOLOL chips and connect them together.\nThey can make it easier to construct larger and more complicated YOLOL systems compared to using simple chip sockets.",
+	category=devices.categories.starbase
+}, devices.DeviceMeta)
+
+local Modules = {}
+RackDevice.Modules = Modules
+
+local ChipReaderModule = {}
+ChipReaderModule.__index = ChipReaderModule
+function ChipReaderModule.create()
+	return setmetatable({
+		slot1=nil
+	}, ChipReaderModule)
+end
+function ChipReaderModule:draw()
+	-- TODO
+end
+function ChipReaderModule:save(data)
+	-- TODO
+end
+function ChipReaderModule:load(save)
+	-- TODO
+end
+
+RackDevice:newField {
+	name="CurrentState",
+	desc="TODO desc",
+	default=1
+}
+
+RackDevice:newField {
+	name="OnState",
+	desc="TODO desc",
+	default=1
+}
+
+RackDevice:newField {
+	name="OffState",
+	desc="TODO desc",
+	default=0
+}
+
+RackDevice:newField {
+	name="ButtonStyle",
+	desc="TODO desc",
+	default=0
+}
+
+function RackDevice:draw()
+	local RackImg = GetImage("imgs/rack.png")
+	local width, height = self:getSize()
+	love.graphics.draw(RackImg, 0, 0, 0, GetScale(RackImg:getWidth(), RackImg:getHeight(), width, height))
+end
+function RackDevice:getSize()
+	return 80, 80
+end
+
+function RackDevice:save(data)
+	
+end
+function RackDevice:load(save)
+
+end
+
+devices:register(RackDevice)

@@ -14,8 +14,9 @@ local VM_ErrMsg = {
 }
 
 
+---@class VM
 local vm = {
-	---@type Device_Chip
+	---@type YololChip
 	chip=nil,
 	---@type YAST_Program
 	ast=nil,
@@ -26,11 +27,46 @@ local vm = {
 	variables=nil,
 	---@type number
 	line=nil,
+	---@type number
+	prevLine=0,
 
 	MAX_STR_LENGTH=524288  -- this is quite large O_o
 }
 vm.__index = vm
 
+
+---@param chip YololChip
+---@param initialLines string[]|nil
+function vm.new(chip, initialLines)
+	local self = setmetatable({
+		chip=chip,
+		lines=initialLines or {},
+		errors={},
+
+		variables={},
+		line=1
+	}, vm)
+	return self
+end
+function vm.newFromSave(chip, save)
+	local self = setmetatable({
+		chip=chip,
+		lines={},
+		errors={},
+
+		variables=save.variables or {},
+		line=save.line or 1
+	}, vm)
+	return self
+end
+function vm:jsonify()
+	return {
+		lines=self.lines,
+
+		variables=self.variables,
+		line=self.line
+	}
+end
 
 function vm:eval_binary(ast, operator, leftValue, rightValue)
 	if operator == "^" then
@@ -308,40 +344,6 @@ function vm:eval_unary(ast, operator, value)
 	end
 end
 
-
----@param chip Device_Chip
----@param initialLines string[]|nil
-function vm.new(chip, initialLines)
-	local self = setmetatable({
-		chip=chip,
-		lines=initialLines or {},
-		errors={},
-
-		variables={},
-		line=1
-	}, vm)
-	return self
-end
-function vm.newFromSave(chip, save)
-	local self = setmetatable({
-		chip=chip,
-		lines={},
-		errors={},
-
-		variables=save.variables or {},
-		line=save.line or 1
-	}, vm)
-	return self
-end
-function vm:jsonify()
-	return {
-		lines=self.lines,
-
-		variables=self.variables,
-		line=self.line
-	}
-end
-
 ---@param errTbl VM_ErrMsg
 function vm:pushError(errTbl)
 	table.insert(self.errors[self.line], errTbl)
@@ -355,7 +357,7 @@ end
 ---@param value string|number
 function vm:setVariableFromName(name, value)
 	if name:sub(1, 1) == ":" then
-		LoadedMap:changeField(self.chip, name:sub(2, #name), value)
+		self.chip.network:setField(name:sub(2, #name), value)
 	else
 		self.variables[name] = value
 	end
@@ -363,7 +365,7 @@ end
 ---@param name string
 function vm:getVariableFromName(name)
 	if name:sub(1, 1) == ":" then
-		return LoadedMap:getField(self.chip, name:sub(2, #name))
+		return self.chip.network:getField(name:sub(2, #name))
 	else
 		return self.variables[name] or 0
 	end
@@ -417,6 +419,7 @@ end
 --- Runs all code in the next line
 function vm:step()
 	---@type YAST_Line
+	self.prevLine = self.line
 	local line = self.lines[self.line]
 	self.errors[self.line] = {}
 
@@ -440,7 +443,7 @@ function vm:evalExpr(ast)
 		end
 		local value
 		if external then
-			value = LoadedMap:getField(self.chip, name)
+			value = self.chip.network:getField(name)
 		else
 			local v, multipleDifferentValues = self.variables[name]
 			value = v

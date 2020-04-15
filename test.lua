@@ -11,13 +11,10 @@ end
 
 local re = require "relabel"
 local yolol = require "yolol"
-local yololVM = require "yololVM"
+-- local yololVM = require "yololVM"
 
 local input = [[
-a = "123"
-b = "2"
-result = a
-result -= b
+x = y--z--4
 ]]
 local result = yolol.parse(input)
 
@@ -63,28 +60,28 @@ else
 	print("No parsed data.")
 end
 
-local vm = yololVM.new(nil, result.program.lines)
+-- local vm = yololVM.new(nil, result.program.lines)
 
-print("Running in VM (external variables will raise errors)")
-local start = os.clock()
-for i=1,#vm.lines*1 do
-	i = i + 1
-	vm:step()
-end
-local finish = os.clock()
-print("Took " .. tostring(finish - start) .. "s to run.")
+-- print("Running in VM (external variables will raise errors)")
+-- local start = os.clock()
+-- for i=1,#vm.lines*1 do
+-- 	i = i + 1
+-- 	vm:step()
+-- end
+-- local finish = os.clock()
+-- print("Took " .. tostring(finish - start) .. "s to run.")
 
-print("Errors")
-for ln, errors in ipairs(vm.errors) do
-	for _, err in ipairs(errors) do
-		print("Error on line: " .. tostring(ln))
-		print(err.msg)
-	end
-end
+-- print("Errors")
+-- for ln, errors in ipairs(vm.errors) do
+-- 	for _, err in ipairs(errors) do
+-- 		print("Error on line: " .. tostring(ln))
+-- 		print(err.msg)
+-- 	end
+-- end
 
-if vm.variables.result ~= nil then
-	print("VM `Result` variable: " .. yolol.helpers.strValueFromType(vm.variables.result))
-end
+-- if vm.variables.result ~= nil then
+-- 	print("VM `Result` variable: " .. yolol.helpers.strValueFromType(vm.variables.result))
+-- end
 
 print("Exit.")
 os.exit()
