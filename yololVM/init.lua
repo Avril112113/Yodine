@@ -333,8 +333,17 @@ function vm:eval_unary(ast, operator, value)
 		else
 			return value
 		end
+	elseif operator == "!" then
+		if type(value) ~= "number" then
+			self:pushError({
+				level="error",
+				msg="Attempt factorial on " .. type(value)
+			})
+			self:haltLine()
+		end
+		return Factorial(value)
 	else
-		errorVM("invalid operator " .. tostring(operator) .. " for keyword handling in eval, expected a valid keyword")
+		errorVM("invalid operator " .. tostring(operator) .. " for unary/keyword handling in eval, expected a valid keyword")
 	end
 end
 

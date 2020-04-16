@@ -99,6 +99,15 @@ function table.serialize(_tbl, indent, lineEnd)
 	return table.concat(str)
 end
 
+-- http://progopedia.com/example/factorial/26/
+function Factorial(n)
+	local result = 1
+	for i=n, 2, -1 do
+		result = result * i
+	end
+	return result
+end
+
 -- function jsonify_auto(tbl)
 -- 	local new = {}
 -- 	for i, v in pairs(tbl) do
