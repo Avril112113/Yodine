@@ -76,11 +76,7 @@ function YololChip:getSize()
 end
 
 function YololChip:openGUI()
-	menus.YololChipEditor.yololChip = self
-	menus.YololChipEditor.base:MakeTop()
-	menus.YololChipEditor:update()
-	menus.YololChipEditor:vmUpdate()
-	menus.YololChipEditor.base:SetVisible(true)
+	menus.YololChipEditor:OpenChip(self)
 end
 
 function YololChip:linesChanged(...)

@@ -139,3 +139,13 @@ function YololChipEditor:vmUpdate()
 		end
 	end
 end
+
+---@param yololChip YololChip
+function YololChipEditor:OpenChip(yololChip)
+	self.yololChip = yololChip
+	editor.focus = true
+	base:MakeTop()
+	self:update()
+	self:vmUpdate()
+	base:SetVisible(true)
+end

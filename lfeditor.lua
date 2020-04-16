@@ -43,6 +43,7 @@ function editor:initialize()
 	self.textColor = {1, 1, 1, 1}
 	---@type Diagnostic[]
 	self.diagnostics = {}
+	self.focus = false
 
 	self.cursory = 1
 	self.cursorx = 1
@@ -189,8 +190,11 @@ end
 function editor:mousepressed(x, y, button)
 	x, y = x - self.x, y - self.y
 	if x < 0 or y < 0 or x > self.width or y > self.height or not self.visible or  loveframes.state ~= self.state or self.readOnly then
+		self.focus = false
 		return
 	end
+
+	self.focus = true
 
 	local charSize = self.font:getWidth("A")
 	local line = math.floor(y / self.lineHeight) + 1
@@ -204,7 +208,7 @@ function editor:mousepressed(x, y, button)
 end
 
 function editor:keypressed(key, isrepeat)
-	if not self.visible or loveframes.state ~= self.state or self.readOnly then
+	if not self.visible or not self.focus or loveframes.state ~= self.state or self.readOnly then
 		return
 	end
 
@@ -257,11 +261,9 @@ function editor:keypressed(key, isrepeat)
 end
 
 function editor:textinput(char)
-	if not self.visible or loveframes.state ~= self.state or self.readOnly then
+	if not self.visible or not self.focus or loveframes.state ~= self.state or self.readOnly then
 		return
 	end
-
-	-- TODO: find out why this and other events like keypressed gets called 2 times
 
 	local line = self.lines[self.cursory]
 	if #line + #char > self.maxLineLength then
