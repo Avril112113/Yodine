@@ -26,7 +26,8 @@ local YololChip = setmetatable({
 YololChip:newField {
 	name="ChipWait",
 	desc="Controls script execution. Negative values mean execution is paused, zero means script is being executed, and positive values mean execution will continue after the amount of line runs have passed that are equal to the value.	",
-	default=0
+	default=0,
+	validateValue=devices.validateValue_number
 }
 
 function YololChip:init()
@@ -45,7 +46,7 @@ function YololChip:init()
 	self:linesChanged(unpack(changes))
 end
 function YololChip:update(dt)
-	local chipWait = self:getFieldValue("ChipWait")
+	local chipWait = self:getFieldValue("ChipWait", false)
 
 	self.lastStep = self.lastStep + dt
 	if self.lastStep > self.stepInveral then
@@ -117,7 +118,7 @@ function YololChip:load(data)
 end
 
 function YololChip:isPaused()
-	return self:getFieldValue("ChipWait") ~= 0
+	return self:getFieldValue("ChipWait", false) ~= 0
 end
 
 
