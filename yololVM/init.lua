@@ -391,7 +391,7 @@ function vm:execCode(code)
 					})
 				else
 					self:pushError({
-						msg="CRITIAL VM ERROR"
+						msg="CRITIAL VM ERROR (Check Yodine's console output)"
 					})
 				end
 				break
