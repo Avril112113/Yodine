@@ -124,8 +124,8 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 		end
 		return leftValue % rightValue
 	elseif operator == "+" then
-		if type(leftValue) == "string" and type(rightValue) == "string" then
-			local str = leftValue .. rightValue
+		if type(leftValue) == "string" or type(rightValue) == "string" then
+			local str = tostring(leftValue) .. tostring(rightValue)
 			if #str > self.MAX_STR_LENGTH then
 				self:pushError({
 					level="warn",
@@ -134,12 +134,6 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 				return str:sub(1, self.MAX_STR_LENGTH)
 			end
 			return str
-		elseif type(leftValue) == "string" or type(rightValue) == "string" then
-			self:pushError({
-				level="error",
-				msg="Attempt to `" .. tostring(operator) .. "` on " .. type(leftValue) .. " and " .. type(rightValue)
-			})
-			self:haltLine()
 		else
 			return leftValue + rightValue
 		end
