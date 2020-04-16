@@ -54,12 +54,12 @@ assign_op	<- '=' / '+' Sp '=' / '-' Sp '=' / '*' Sp '=' / '/' Sp '=' / '%' Sp '=
 named_op	<- ABS / SQRT / SIN / COS / TAN / ASIN / ACOS / ATAN / NOT
 pre_post_op	<- '+' Sp '+' / '-' Sp '-'
 add_op		<- !pre_post_op [+-]
-neg_op		<- '-' (&('-' Sp '-') / !'-')
+neg_op		<- '-' (&('-' SpE '-') / !'-')
 mul_op		<- [*/%] !'/'
 exp_op		<- '^'
-fac_op		<- (!eq_op / &('!' Sp eq_op)) '!'
-neq_op		<- [<>] (Sp '=')?
-eq_op		<- [!=] Sp '='
+fac_op		<- (!eq_op / &('!' eq_op)) '!'
+neq_op		<- [<>] ('=' / &(Sp '=') SpE '=')?
+eq_op		<- [!=] SpE '='
 
 string	<- '"' (" "/"!"/[#-~])*->string '"'
 number	<- ('-'? digit+ ('.' digit+)?) -> number
@@ -118,5 +118,7 @@ W	<- [wW]
 X	<- [xX]
 Y	<- [yY]
 
-Sp			<- (" " / %esc_t)*
-any			<- .
+SpE	<- (RSp {} -> OPERATOR_SPACE)?
+Sp	<- (" " / %esc_t)*
+RSp	<- (" " / %esc_t)+
+any	<- .

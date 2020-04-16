@@ -23,6 +23,7 @@ local binaryOpData = precedence.binaryOpData
 local function _climbPrecedence(data, min_precedence)
 	local lhs = table.remove(data, 1)
 	if type(lhs) == "string" then
+		lhs = lhs:gsub(" ", "")
 		local opData = unaryOpData[lhs]
 		if opData == nil then
 			error("Invalid op, was unary '" .. lhs .. "' but expected a valid operator")
@@ -40,7 +41,7 @@ local function _climbPrecedence(data, min_precedence)
 		local lahead = data[1]
 		if type(lahead) ~= "string" then break end
 
-		local op = lahead:lower()
+		local op = lahead:lower():gsub(" ", "")
 		local opData = binaryOpData[op]
 		if opData == nil then
 			error("Invalid op, was binary '" .. op .. "' but expected a valid operator")
@@ -144,8 +145,16 @@ local defs = {
 		pusherror {
 			type="SYNTAX_ERROR",
 			pos=pos,
+			finish=finish,
 			remaing=remaining,
 			msg="Syntax Error: un-parsed input remaining '" .. remaining:gsub("\r", "\\r"):gsub("\n", "\\n"):gsub("\t", "\\t") .. "'"
+		}
+	end,
+	OPERATOR_SPACE=function(pos)
+		pusherror {
+			type="SYNTAX_ERROR",
+			pos=pos,
+			msg="Operators may not have space in the middle"
 		}
 	end,
 
@@ -194,7 +203,7 @@ local defs = {
 		return {
 			type="statement::assignment",
 			identifier=identifier,
-			operator=operator and operator:gsub(" ", ""),
+			operator=operator:gsub(" ", ""),
 			value=value
 		}
 	end,
@@ -227,27 +236,27 @@ local defs = {
 	keyword=function(operator, operand)
 		return {
 			type="expression::unary_op", -- "expression::unary_op::keyword",
-			operator=operator,
+			operator=operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
 	neg=function(operator, operand)
 		return {
 			type="expression::unary_op", -- "expression::unary_op::neg",
-			operator=operator and operator:gsub(" ", ""),
+			operator=operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
 	fact=function(value, operator, ...)
 		local result = {
 			type="expression::unary_op", -- "expression::unary_op::fact",
-			operator=operator,
+			operator=operator:gsub(" ", ""),
 			operand=value
 		}
 		for i, v in pairs({...}) do
 			result = {
 				type="fact",
-				operator=v,
+				operator=v:gsub(" ", ""),
 				operand=result
 			}
 		end
@@ -257,7 +266,7 @@ local defs = {
 		return {
 			type="expression::unary_op", -- "expression::unary_op::pre_add",
 			prpo="pre",
-			operator=operator and operator:gsub(" ", ""),
+			operator=operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
@@ -265,7 +274,7 @@ local defs = {
 		return {
 			type="expression::unary_op", -- "expression::unary_op::post_add",
 			prpo="post",
-			operator=operator and operator:gsub(" ", ""),
+			operator=operator:gsub(" ", ""),
 			operand=operand
 		}
 	end,
