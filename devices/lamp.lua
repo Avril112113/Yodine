@@ -11,12 +11,14 @@ local LampDevice = setmetatable({
 LampDevice:newField {
 	name="LampOn",
 	desc="TODO desc",
-	default=0
+	default=0,
+	validateValue=devices.validateValue_number
 }
 LampDevice:newField {
 	name="LampLumens",
 	desc="How bright the lamp is in lumens. 600 is a reasonable value for average lights.",
-	default=600
+	default=600,
+	validateValue=devices.validateValue_number
 }
 LampDevice:newField {
 	name="LampColorHue",
@@ -48,7 +50,7 @@ function LampDevice:draw()
 	local LampLightImg = GetImage("imgs/lamp_light.png")
 	local width, height = self:getSize()
 	love.graphics.draw(LampImg, 0, 0, 0, GetScale(LampImg:getWidth(), LampImg:getHeight(), width, height))
-	if self:getFieldValue("LampOn") ~= 0 then
+	if self:getFieldValue("LampOn", false) ~= 0 then
 		local r, g, b = HSVToRGB(self:getFieldValue("LampColorHue", false), self:getFieldValue("LampColorSaturation", false),  self:getFieldValue("LampColorValue", false))
 		love.graphics.setColor(r, g, b, 1)
 	else

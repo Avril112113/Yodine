@@ -278,6 +278,12 @@ end
 function devices.validateValue_none(self, value)
 	return value
 end
+function devices.validateValue_number(self, value)
+	if type(value) ~= "number" then
+		return self.default
+	end
+	return value
+end
 --- inclusive
 function devices.genValidateValue_range(from, to)
 	return function(self, value)
