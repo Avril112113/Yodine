@@ -89,8 +89,8 @@ end
 function DeviceMeta:deserialize(network, save)
 	local x, y = save.extensions.x, save.extensions.y
 	local invalidPosWarning = false
-	if type(x) ~= "number" then x = 0 invalidPosWarning = true end
-	if type(y) ~= "number" then y = 0 invalidPosWarning = true end
+	if type(x) ~= "number" and type(self) == DeviceMeta then x = 0 invalidPosWarning = true end
+	if type(y) ~= "number" and type(self) == DeviceMeta then y = 0 invalidPosWarning = true end
 	if invalidPosWarning then
 		print("WARNING: save.yaml contained invalid device position")
 	end
