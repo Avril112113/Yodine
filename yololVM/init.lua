@@ -519,9 +519,10 @@ function vm:st_goto(ast)
 	if type(ln) ~= "number" then
 		self:pushError({
 			level="error",
-			msg="attempt to goto a invalid line, it was not a number."
+			msg="attempt to goto a invalid line, not a number."
 		})
 	else
+		ln = math.floor(ln)
 		if ln <= 0 then
 			ln = 1
 		elseif ln > 20 then
