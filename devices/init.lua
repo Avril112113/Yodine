@@ -87,7 +87,14 @@ function DeviceMeta:destroy()
 end
 
 function DeviceMeta:deserialize(network, save)
-	local self = self:create(save.extensions.x, save.extensions.y)
+	local x, y = save.extensions.x, save.extensions.y
+	local invalidPosWarning = false
+	if type(x) ~= "number" then x = 0 invalidPosWarning = true end
+	if type(y) ~= "number" then y = 0 invalidPosWarning = true end
+	if invalidPosWarning then
+		print("WARNING: save.yaml contained invalid device position")
+	end
+	local self = self:create(x, y)
 	self:changeNetwork(network)
 	-- fieldDeviceName's are mixed in with other data in the save
 	for _, DeviceField in pairs(self.DeviceFields) do
