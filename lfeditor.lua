@@ -242,7 +242,7 @@ function editor:keypressed(key, isrepeat)
 		end
 	elseif key == "backspace" then
 		local line = self.lines[self.cursory]
-		if #line > 0 then
+		if #line > 0 and self.cursorx > 1 then
 			local newLine = line:sub(0, self.cursorx-2) .. line:sub(self.cursorx)
 			self.lines[self.cursory] = newLine
 			self.cursorx = self.cursorx - 1
