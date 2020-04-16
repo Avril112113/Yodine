@@ -208,7 +208,7 @@ function DeviceMeta:getFieldValue(fieldDeviceName, getRawValue)
 	if getRawValue == false then
 		local validator = deviceField.validateValue
 		if validator ~= nil then
-			value = validator()
+			value = validator(deviceField, value)
 		end
 	end
 	return value
