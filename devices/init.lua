@@ -11,15 +11,15 @@ local devices = {
 			order=2
 		},
 		unoffical={
-			displayname="Un-Offical Devices",
+			displayname="Un-Official Devices",
 			order=3
 		},
 		unoffical_chips={
-			displayname="Un-Offical Chips",
+			displayname="Un-Official Chips",
 			order=4
 		},
 		uncatagorized={
-			displayname="Uncatagorized Devices",
+			displayname="Uncategorized",
 			order=9999
 		},
 	}
