@@ -67,7 +67,7 @@ function DeviceMeta:create(x, y)
 		end,
 		__metatable=meta
 	})
-	Device._fields = {}
+	self._fields = {}
 	for _, DeviceField in pairs(Device.DeviceFields) do
 		self._fields[DeviceField.name] = DeviceField.name
 	end
