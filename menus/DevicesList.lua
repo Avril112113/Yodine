@@ -1,6 +1,7 @@
 local loveframes = require "loveframes"
 local menus = require "menus"
 local devices = require "devices"
+require "lfFixedList"(loveframes)
 
 
 local textColor = {0.9, 0.9, 0.9, 1}
@@ -16,8 +17,9 @@ DevicesList.base = base
 base:SetPadding(0)
 base:SetSpacing(3)
 
+-- TODO: This entire thing needs redoing
+
 local orderedCategories = {}
--- TODO: fix this, its exponentially slow (device count)
 for _, category in pairs(devices.categories) do
 	local orderedDevices = {}
 	for _, device in pairs(devices.registered) do
@@ -41,7 +43,11 @@ for _, data in ipairs(orderedCategories) do
 	local collapsible = loveframes.Create("collapsiblecategory")
 	collapsible:SetText(category.displayname)
 
-	local categoryDevicesList = loveframes.Create("list")
+	local categoryDevicesList = loveframes.Create("fixedlist")
+	local upd = categoryDevicesList.update
+	function categoryDevicesList.update(self, dt)
+		upd(self, dt)
+	end
 	collapsible:SetObject(categoryDevicesList)
 
 	for _, device in ipairs(orderedDevices) do
@@ -53,7 +59,7 @@ for _, data in ipairs(orderedCategories) do
 		local aspect = targetWidth/dw
 		local panelHeight = dh*aspect + (padding*2)
 		local panelWidth = base.width + padding
-		local leftOfPreviewWidth = panelWidth - targetWidth - (padding*2) - 26
+		local leftOfPreviewWidth = panelWidth - targetWidth - (padding*2)
 
 		local DeviceName = loveframes.Create("text", panel)
 		DeviceName:SetSize(leftOfPreviewWidth, -1)
@@ -62,7 +68,6 @@ for _, data in ipairs(orderedCategories) do
 
 		local DescText = loveframes.Create("text", panel)
 		DescText:SetSize(leftOfPreviewWidth, -1)
-		-- SetPos is fine as long as base:SetSize uses a constant width in DevicesList:update()
 		DescText:SetPos(padding, padding + DeviceName.y + DeviceName.height)
 		DescText:SetText {{font=DevicesList.deviceDescFont, color=textColor}, device.desc or "No Device Description."}
 		local descTextBottom = padding + DeviceName.y + DeviceName.height + DescText.y + DescText.height + (padding*2)
@@ -104,6 +109,6 @@ for _, data in ipairs(orderedCategories) do
 end
 
 function DevicesList:update()
-	base:SetSize(280, love.graphics.getHeight())
+	base:SetSize(320, love.graphics.getHeight())
 	base:SetPos(love.graphics.getWidth()-base.width, 0)
 end
