@@ -312,11 +312,12 @@ function vm:eval_unary(ast, operator, value)
 		elseif ast.operator == "--" then
 			if type(value) == "string" then
 				if #value <= 0 then
-					self:pushError({
-						level="error",
-						msg="Attempt to remove from empty string"
-					})
-					self:haltLine()
+					-- self:pushError({
+					-- 	level="error",
+					-- 	msg="Attempt to remove from empty string"
+					-- })
+					-- self:haltLine()
+					return ""
 				end
 				newValue = value:sub(0, -2)
 			else
