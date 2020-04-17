@@ -5,6 +5,9 @@ local yolol = require "yolol"
 local yololVM = require "yololVM"
 
 
+local emptyAST = yolol.parseLine("")
+
+
 ---@class YololChip
 local YololChip = setmetatable({
 	name="YololChip",
@@ -82,7 +85,20 @@ end
 function YololChip:linesChanged(...)
 	for _, change in ipairs({...}) do
 		self.lines[change.line] = change.text
-		self.vm.lines[change.line] = yolol.parseLine(change.text)
+		local ast = emptyAST
+		local ok, parsedAST = xpcall(yolol.parseLine, function(err)
+			print("Failed to parse line: '" .. change.text .. "'")
+			print(debug.traceback(err))
+			-- Well its hacky but does exacly what we want
+			local errs = self.vm.errors[change.line] or {}
+			table.insert(errs, {
+				level="error",
+				msg="CRITIAL PARSE ERROR (Check Yodine's console output)"
+			})
+			self.vm.errors[change.line] = errs
+		end, change.text)
+		if ok then ast = parsedAST end
+		self.vm.lines[change.line] = ast
 	end
 end
 
