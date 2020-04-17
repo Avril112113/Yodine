@@ -145,7 +145,13 @@ function DeviceMeta:changeNetwork(network)
 	end
 	network:addObject(self)
 	self.network = network
-	self:setFieldDefaults()
+	-- self:setFieldDefaults()
+	for fieldDeviceName, fieldName in pairs(self._fields) do
+		local value = network.fields[fieldName]
+		if value == nil then
+			network.fields[fieldName] = oldNetwork and oldNetwork.fields[fieldName] or self.DeviceFields[fieldDeviceName].default
+		end
+	end
 	if oldNetwork ~= nil then
 		oldNetwork:generateHull()
 	end
