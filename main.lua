@@ -10,6 +10,8 @@ math.randomseed(os.time())
 
 require "utils"  -- provides a set of global functions
 
+-- require "test"
+
 
 -- Constant's and defining locals
 BackgroundCellSize = 20

@@ -14,7 +14,7 @@ local yolol = require "yolol"
 -- local yololVM = require "yololVM"
 
 local input = [[
-x = y--z--4
+a% %
 ]]
 local result = yolol.parse(input)
 

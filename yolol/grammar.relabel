@@ -33,7 +33,8 @@ prec_3		<- fact1 / prec_2
 named		<- ({named_op} Sp (value_nop / prec_3 / named / {} -> MISS_EXPR)) -> keyword
 prec_4		<- named / prec_3
 
-binary		<- ((value_nop / prec_4) (Sp {exp_op / mul_op / add_op / neq_op / eq_op / OR / AND} Sp (value_nop / prec_4 / {} -> MISS_EXPR))+) -> binary
+bin_op		<- exp_op / mul_op / add_op / neq_op / eq_op / OR / AND
+binary		<- ((value_nop / prec_4) (Sp {bin_op} Sp (bin_op* {}->MISS_EXPR Sp)? (value_nop / prec_4 / {} -> MISS_EXPR))+) -> binary
 prec_5		<- binary / prec_4
 
 value 	<- string
