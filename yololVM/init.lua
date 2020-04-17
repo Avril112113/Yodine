@@ -68,6 +68,27 @@ function vm:jsonify()
 	}
 end
 
+local nan = 0/0
+local inf = 1/0
+function vm:dealWithNanInf(value)
+	if value == nan then
+		print("WARNING: we had a 'nan' value, fornow we will just set this as 0")
+		self:pushError {
+			level="warn",
+			msg="We ran into a 'nan' value, it was set to 0"
+		}
+		return 0
+	elseif value == inf then
+		print("WARNING: we had a 'inf' value, fornow we will just set this as math.huge")
+		self:pushError {
+			level="warn",
+			msg="We ran into a 'inf' value, it was set to math.huge"
+		}
+		return math.huge
+	end
+	return value
+end
+
 function vm:eval_binary(ast, operator, leftValue, rightValue)
 	if operator == "^" then
 		if type(leftValue) == "string" or type(rightValue) == "string" then
@@ -77,7 +98,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 			})
 			self:haltLine()
 		else
-			return leftValue ^ rightValue
+			return self:dealWithNanInf(leftValue ^ rightValue)
 		end
 	elseif operator == "*" then
 		if type(leftValue) == "string" or type(rightValue) == "string" then
@@ -87,7 +108,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 			})
 			self:haltLine()
 		else
-			return leftValue * rightValue
+			return self:dealWithNanInf(leftValue * rightValue)
 		end
 	elseif operator == "/" then
 		if type(leftValue) == "string" or type(rightValue) == "string" then
@@ -104,7 +125,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 				})
 				self:haltLine()
 			end
-			return leftValue / rightValue
+			return self:dealWithNanInf(leftValue / rightValue)
 		end
 	elseif operator == "%" then
 		if type(leftValue) == "string" or type(rightValue) == "string" then
@@ -122,7 +143,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 				self:haltLine()
 			end
 		end
-		return leftValue % rightValue
+		return self:dealWithNanInf(leftValue % rightValue)
 	elseif operator == "+" then
 		if type(leftValue) == "string" or type(rightValue) == "string" then
 			local str = tostring(leftValue) .. tostring(rightValue)
@@ -135,7 +156,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 			end
 			return str
 		else
-			return leftValue + rightValue
+			return self:dealWithNanInf(leftValue + rightValue)
 		end
 	elseif operator == "-" then
 		if type(leftValue) == "string" and type(rightValue) == "string" then
@@ -148,7 +169,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 			})
 			self:haltLine()
 		else
-			return leftValue - rightValue
+			return self:dealWithNanInf(leftValue - rightValue)
 		end
 	elseif operator == "==" then
 		if leftValue == rightValue then
@@ -218,7 +239,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.abs(value)
+			return self:dealWithNanInf(math.abs(value))
 		end
 	elseif operator == "cos" then
 		if type(value) == "string" then
@@ -228,7 +249,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.cos(value)
+			return self:dealWithNanInf(math.cos(value))
 		end
 	elseif operator == "sin" then
 		if type(value) == "string" then
@@ -238,7 +259,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.sin(value)
+			return self:dealWithNanInf(math.sin(value))
 		end
 	elseif operator == "tan" then
 		if type(value) == "string" then
@@ -258,7 +279,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.acos(value)
+			return self:dealWithNanInf(math.acos(value))
 		end
 	elseif operator == "asin" then
 		if type(value) == "string" then
@@ -268,7 +289,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.asin(value)
+			return self:dealWithNanInf(math.asin(value))
 		end
 	elseif operator == "atan" then
 		if type(value) == "string" then
@@ -278,7 +299,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.atan(value)
+			return self:dealWithNanInf(math.atan(value))
 		end
 	elseif operator == "sqrt" then
 		if type(value) == "string" then
@@ -288,7 +309,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return math.sqrt(value)
+			return self:dealWithNanInf(math.sqrt(value))
 		end
 	elseif operator == "-" then
 		if type(value) == "string" then
@@ -298,7 +319,7 @@ function vm:eval_unary(ast, operator, value)
 			})
 			self:haltLine()
 		else
-			return -self:evalExpr(ast.operand)
+			return self:dealWithNanInf(-self:evalExpr(ast.operand))
 		end
 	elseif operator == "++" or operator == "--" then
 		local identifier = ast.operand.name  -- i previously had a check here incase ast.operand was nil, it should not be needed tho.
@@ -327,6 +348,8 @@ function vm:eval_unary(ast, operator, value)
 		else
 			errorVM("invalid operator " .. tostring(operator) .. " for unary_add handling in eval, expected a valid operator")
 		end
+		value = self:dealWithNanInf(value)
+		newValue = self:dealWithNanInf(newValue)
 		if identifier ~= nil then
 			self:setVariableFromName(identifier, newValue)
 		end
