@@ -317,9 +317,10 @@ function vm:eval_unary(ast, operator, value)
 					-- 	msg="Attempt to remove from empty string"
 					-- })
 					-- self:haltLine()
-					return ""
+					newValue = ""
+				else
+					newValue = value:sub(0, -2)
 				end
-				newValue = value:sub(0, -2)
 			else
 				newValue = value - 1
 			end
