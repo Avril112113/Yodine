@@ -160,7 +160,7 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 		end
 	elseif operator == "-" then
 		if type(leftValue) == "string" and type(rightValue) == "string" then
-			local findPosReversed = string.reverse(leftValue):find(string.reverse(rightValue))
+			local findPosReversed = string.reverse(leftValue):find(string.reverse(rightValue):toPatternSafe())
 			if findPosReversed == nil then
 				return leftValue
 			end

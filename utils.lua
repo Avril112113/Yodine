@@ -212,3 +212,7 @@ function InsidePolygon(polygon, point)
     end
     return oddNodes
 end
+
+function string:toPatternSafe()
+	return self:gsub("([%.%+%*%-%?%[%]%(%)%^%$%%])", "%%%1"):gsub("%%([acdlpsuwxzACDLPSUWXZ])", "%%%1")
+end
