@@ -178,7 +178,9 @@ function Network:setField(name, value)
 end
 
 function Network:changeField(oldName, newName)
-	self.fields[newName] = self:getField(oldName)
+	if self.fields[newName] == nil then
+		self.fields[newName] = self:getField(oldName)
+	end
 	for _, obj in pairs(self.objects) do
 		if obj:hasFieldWithName(oldName) then
 			return
