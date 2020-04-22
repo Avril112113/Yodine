@@ -160,7 +160,11 @@ function vm:eval_binary(ast, operator, leftValue, rightValue)
 		end
 	elseif operator == "-" then
 		if type(leftValue) == "string" and type(rightValue) == "string" then
-			local findPos =  #leftValue - string.find(string.reverse(leftValue), string.reverse(rightValue)) - (#rightValue - 1)
+			local findPosReversed = string.reverse(leftValue):find(string.reverse(rightValue))
+			if findPosReversed == nil then
+				return leftValue
+			end
+			local findPos =  #leftValue - findPosReversed - (#rightValue - 1)
 			return leftValue:sub(0, findPos) .. leftValue:sub(findPos+#rightValue+1, #leftValue)
 		elseif type(leftValue) == "string" or type(rightValue) == "string" then
 			self:pushError({
