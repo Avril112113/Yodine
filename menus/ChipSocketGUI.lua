@@ -104,3 +104,17 @@ end
 function ChipSocketGUI:deviceDropped(device)
 	self.chipSocket:SetNewChipDevice(device)
 end
+
+function ChipSocketGUI:openGUI(device)
+	local oldGuiSocketDevice = self.chipSocket
+	self.chipSocket = device
+	self:update()
+	if oldGuiSocketDevice ~= device then
+		self.base:SetVisible(true)
+		self.base:MakeTop()
+		ClearSelectedDevices()
+		AddSelectedDevice(device.chip)
+	else
+		self.base:OnClose()
+	end
+end

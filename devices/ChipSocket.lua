@@ -56,17 +56,7 @@ function ChipSocketDevice:getSize()
 end
 
 function ChipSocketDevice:openGUI()
-	local oldGuiSocketDevice = menus.ChipSocketGUI.chipSocket
-	menus.ChipSocketGUI.chipSocket = self
-	menus.ChipSocketGUI:update()
-	if oldGuiSocketDevice ~= self then
-		menus.ChipSocketGUI.base:SetVisible(true)
-		menus.ChipSocketGUI.base:MakeTop()
-		ClearSelectedDevices()
-		AddSelectedDevice(self.chip)
-	else
-		menus.ChipSocketGUI.base:OnClose()
-	end
+	menus.ChipSocketGUI:openGUI(self)
 end
 
 function ChipSocketDevice:networkChanged(oldNetwork, newNetwork)
