@@ -227,7 +227,7 @@ function editor:keypressed(key, isrepeat)
 			local curLine = self.lines[oldCursorY]
 			self.lines[oldCursorY] = self.lines[self.cursory]
 			self.lines[self.cursory] = curLine
-			self:linesChanged({line=oldCursorY, text=curLine}, {line=self.cursory, text=self.lines[self.cursory]})
+			self:linesChanged({line=oldCursorY, text=self.lines[oldCursorY]}, {line=self.cursory, text=self.lines[self.cursory]})
 		end
 	elseif key == "down" then
 		local oldCursorY = self.cursory
@@ -238,7 +238,7 @@ function editor:keypressed(key, isrepeat)
 			local curLine = self.lines[oldCursorY]
 			self.lines[oldCursorY] = self.lines[self.cursory]
 			self.lines[self.cursory] = curLine
-			self:linesChanged({line=oldCursorY, text=curLine}, {line=self.cursory, text=self.lines[self.cursory]})
+			self:linesChanged({line=oldCursorY, text=self.lines[oldCursorY]}, {line=self.cursory, text=self.lines[self.cursory]})
 		end
 	elseif key == "backspace" then
 		local line = self.lines[self.cursory]
