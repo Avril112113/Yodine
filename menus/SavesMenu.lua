@@ -77,9 +77,9 @@ SavesMenu.refreshSavesList()
 local ShowInFileBrowser = loveframes.Create("button", base)
 ShowInFileBrowser:SetText("Show In File Browser")
 function ShowInFileBrowser:OnClick()
-	local path = "file://"..love.filesystem.getSaveDirectory()
+	local path = "file://" .. love.filesystem.getSaveDirectory()
 	if selectedSave ~= nil then
-		path = path .. "/" .. selectedSave.dir
+		path = path .. selectedSave.dir
 	end
 	love.system.openURL(path)
 end
