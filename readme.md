@@ -16,7 +16,7 @@ Click with `LMB` on a device to select single device
 `C` will connect all selected devices into a single network, it will seperate the device under the cursor from its network  
 
 # Repo info
-## Running
+## Running from source (Not for releases!)
 To run this you will need [love2d](http://love2d.org/) version 11.x  
 to use the provided dlls get 32-bit love2d.  
 
