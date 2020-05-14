@@ -5,7 +5,8 @@ local devices = require "devices"
 local ButtonDevice = setmetatable({
 	name="Button",
 	desc="TODO",
-	category=devices.categories.starbase
+	category=devices.categories.starbase,
+	font=love.graphics.newFont("fonts/Inconsolata-Regular.ttf", 14)
 }, devices.DeviceMeta)
 
 ButtonDevice:newField {
@@ -39,6 +40,11 @@ function ButtonDevice:draw()
 	end
 	local width, height = self:getSize()
 	love.graphics.draw(btnImg, 0, 0, 0, GetScale(btnImg:getWidth(), btnImg:getHeight(), width, height))
+	love.graphics.setFont(self.font)
+	love.graphics.setColor(0, 0, 0, 1)
+	love.graphics.printf(self:getFieldName("ButtonState"), 1, height/2 - self.font:getHeight() + 1, width, "center")
+	love.graphics.setColor(1, 1, 1, 1)
+	love.graphics.printf(self:getFieldName("ButtonState"), 0, height/2 - self.font:getHeight() + 1, width, "center")
 end
 function ButtonDevice:getSize()
 	return 80, 80
