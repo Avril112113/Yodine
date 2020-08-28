@@ -5,6 +5,7 @@ Pronounced Yo-Dine as in, 'going to a dinner'
 Yodine is a 2D editor and emulates [StarBase](https://store.steampowered.com/app/454120/Starbase/)s data network system and yolol programming language.  
 The project is still under development so expect bugs and errors (please report them).  
 To get started using Yodine check the [releases](https://github.com/Dude112113/Yodine/releases).  
+**PLEAE NOTE:** Major updates are in the works, this entire project is going to be redone.  
 
 # Controls
 Drag with `RMB` to move camera  
