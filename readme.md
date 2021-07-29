@@ -1,5 +1,5 @@
 # Yodine
-Pronounced Yo-Dine as in, 'going to a dinner'
+Pronounced Yo-Dine as in, 'come **dine** with me'
 
 # The project
 Yodine is a 2D editor and emulates [StarBase](https://store.steampowered.com/app/454120/Starbase/)s data network system and yolol programming language.  
